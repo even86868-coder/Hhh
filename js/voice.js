@@ -74,11 +74,17 @@ function playClip(url, gen) {
     currentAudio = a;
     a.volume = voiceSettings.volume;
     let finished = false;
-    const fin = (ok) => { if (!finished) { finished = true; if (currentAudio === a) currentAudio = null; done(ok); } };
+    let timer = null;
+    const fin = (ok) => { if (!finished) { finished = true; clearTimeout(timer); if (currentAudio === a) currentAudio = null; done(ok); } };
+    // Safety net in case 'ended' never fires: give up only well after the clip's own length
+    // (long narration runs past two minutes), or if it never starts loading.
+    const guard = (ms) => { clearTimeout(timer); timer = setTimeout(() => fin(true), ms); };
+    a.onloadedmetadata = () => { if (Number.isFinite(a.duration)) guard(a.duration * 1000 + 4000); };
     a.onended = () => fin(true);
+    a.onpause = () => { if (!a.ended && gen !== generation) fin(true); }; // stopped by stopVoices()
     a.onerror = () => fin(false);
+    guard(20000);
     a.play().catch(() => fin(false));
-    setTimeout(() => fin(true), 30000);
   });
 }
 
