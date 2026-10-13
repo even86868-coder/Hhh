@@ -12,7 +12,7 @@ import { CombatView } from './render.js';
 import { SPELLS } from './spells.js';
 import { sfx, playMusic, stopMusic, settings as audioSettings, unlockAudio } from './audio.js';
 import { PERSONALITIES, DEFAULT_PERSONALITY } from './dialogue.js';
-import { speak, stopVoices, voiceSettings, VOICE_PRESETS, voiceAvailable, castList, setCast, listVoices, voicePackSize } from './voice.js';
+import { speak, stopVoices, voiceSettings, voiceContext, VOICE_PRESETS, voiceAvailable, castList, setCast, listVoices, voicePackSize } from './voice.js';
 import { gmSettings, sceneIntro, stageDirection, explainCheck, explainResult, GMCommentator } from './gm.js';
 import { aiSettings, AI_MODELS, getApiKey, setApiKey, testConnection, aiReady } from './aibanter.js';
 import { talkSettings, sceneLines, campLines, aiSceneLines, speakerOf, Barker } from './talk.js';
@@ -44,12 +44,15 @@ try {
   Object.assign(voiceSettings, prefs.voice || {});
   Object.assign(talkSettings, prefs.talk || {});
   Object.assign(aiSettings, prefs.ai || {});
+  // v2: the narrator reads the story by default and the GM no longer adds his own scene framing.
+  if ((prefs.v || 1) < 2 && prefs.voice) { voiceSettings.narrator = true; voiceSettings.gm = 'tips'; }
 } catch (e) { /* ignore */ }
+prefs.v = 2;
 function savePrefs() {
   try { localStorage.setItem('runelords.prefs', JSON.stringify({ ...prefs, audio: audioSettings, voice: voiceSettings, talk: talkSettings, ai: { enabled: aiSettings.enabled, model: aiSettings.model } })); } catch (e) { /* ignore */ }
 }
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-gmSettings.mode = voiceSettings.gm || 'full';
+gmSettings.mode = voiceSettings.gm || 'tips';
 const GM_SPEAKER = { kind: 'gm', name: 'Game Master' };
 const autoplay = () => !!G.state?.autoplay;
 
@@ -76,6 +79,7 @@ function sceneCanvas(key) {
 
 let lastScreen = null;
 function setScreen(...kids) {
+  voiceContext.playerName = G.state?.party?.[0]?.name || '';
   const a = app();
   const key = kids[0]?.className || '';
   const same = key === lastScreen;
@@ -188,8 +192,8 @@ function showSettings() {
       h('label', { class: 'row' }, 'Character banter', btn(talkSettings.banter ? 'On' : 'Off', () => { talkSettings.banter = !talkSettings.banter; savePrefs(); render(); })),
       h('label', { class: 'row' }, 'Speech bubbles in battle', btn(talkSettings.bubbles ? 'On' : 'Off', () => { talkSettings.bubbles = !talkSettings.bubbles; savePrefs(); render(); })),
       voiceAvailable() ? h('label', { class: 'row' }, 'Character voices', btn(voiceSettings.enabled ? 'On' : 'Off', () => { voiceSettings.enabled = !voiceSettings.enabled; if (!voiceSettings.enabled) stopVoices(); savePrefs(); render(); })) : h('p', { class: 'hint' }, 'Voices are not supported on this device.'),
-      h('label', { class: 'row' }, 'Game Master', btn({ full: 'Full', tips: 'Rules tips only', off: 'Off' }[voiceSettings.gm || 'full'], () => { voiceSettings.gm = { full: 'tips', tips: 'off', off: 'full' }[voiceSettings.gm || 'full']; gmSettings.mode = voiceSettings.gm; savePrefs(); render(); })),
-      voiceAvailable() ? h('label', { class: 'row' }, 'GM reads the story aloud', btn(voiceSettings.narrator ? 'On' : 'Off', () => { voiceSettings.narrator = !voiceSettings.narrator; savePrefs(); render(); })) : null,
+      h('label', { class: 'row' }, 'Game Master', btn({ full: 'Full (adds scene framing)', tips: 'Rules tips only', off: 'Off' }[voiceSettings.gm || 'tips'], () => { voiceSettings.gm = { full: 'tips', tips: 'off', off: 'full' }[voiceSettings.gm || 'tips']; gmSettings.mode = voiceSettings.gm; savePrefs(); render(); })),
+      h('label', { class: 'row' }, 'Narrator reads the story aloud', btn(voiceSettings.narrator ? 'On' : 'Off', () => { voiceSettings.narrator = !voiceSettings.narrator; savePrefs(); render(); })),
       voicePackSize() ? h('label', { class: 'row' }, `Recorded voices (${voicePackSize()} lines)`, btn(voiceSettings.recorded ? 'On' : 'Off', () => { voiceSettings.recorded = !voiceSettings.recorded; savePrefs(); render(); })) : null,
       voiceAvailable() ? h('label', { class: 'row' }, 'Voice casting', btn('Choose voices', () => { document.querySelector('.modal')?.remove(); showCasting(); })) : null,
       voiceAvailable() ? h('label', { class: 'row' }, 'Voice volume', btn(`${Math.round(voiceSettings.volume * 100)}%`, () => { voiceSettings.volume = voiceSettings.volume >= 1 ? 0.25 : Math.round((voiceSettings.volume + 0.25) * 100) / 100; savePrefs(); speak('Like this?', { kind: 'companion', name: 'Pip' }, { queue: false }); render(); })) : null,
@@ -756,7 +760,7 @@ function choose(node, ch, choicesEl) {
   const gmLine = gmOn ? explainCheck(ch.check, r.who.isPlayer ? 'You' : r.who.name, r.untrained ? null : r.mod, r.bonus) : null;
   if (gmLine) choicesEl.append(h('div', { class: 'say gm' }, spriteCanvas(npcSprite('gm'), 2, 'portrait'), h('div', { class: 'say-body' }, h('span', {}, gmLine))));
   choicesEl.append(result);
-  const explained = gmLine ? speak(gmLine, GM_SPEAKER, { queue: false }) : Promise.resolve();
+  stopVoices(); // dice rolls are explained on screen only
   sfx('dice');
   let n = 0;
   const spin = setInterval(() => {
@@ -773,8 +777,7 @@ function choose(node, ch, choicesEl) {
       choicesEl.append(cont);
       const gmOutcome = gmOn ? explainResult(r) : null;
       if (gmOutcome) result.querySelector('.check-text').append(h('div', { class: 'small gm-outcome' }, gmOutcome));
-      const said = explained.then(() => (gmOutcome ? speak(gmOutcome, GM_SPEAKER) : null));
-      if (autoplay()) Promise.all([said, sleep(1600 / prefs.speed)]).then(() => { if (cont.isConnected && autoplay()) cont.click(); });
+      if (autoplay()) sleep(1600 / prefs.speed).then(() => { if (cont.isConnected && autoplay()) cont.click(); });
     }
   }, 60);
 }
@@ -920,9 +923,9 @@ class CombatUI {
     this.gmBox.querySelector('span').textContent = text;
     this.gmBox.hidden = false;
     clearTimeout(this.gmTimer);
-    const shown = speak(text, GM_SPEAKER);
+    // Rules tips and battle announcements are shown, not spoken: voices are for what characters say.
     const minTime = (2500 + text.length * 45) / Math.sqrt(prefs.speed);
-    Promise.all([shown, sleep(minTime)]).then(() => { this.gmTimer = setTimeout(() => { if (this.gmBox.querySelector('span').textContent === text) this.gmBox.hidden = true; }, 300); });
+    sleep(minTime).then(() => { this.gmTimer = setTimeout(() => { if (this.gmBox.querySelector('span').textContent === text) this.gmBox.hidden = true; }, 300); });
   }
 
   onAutoplayToggle() {

@@ -11,7 +11,7 @@ A cute pixel-art phone game retelling **Chapter 1 (Burnt Offerings)** of the *Ri
   - The party talks in story scenes, at campfires and mid-battle (speech bubbles over the pixel characters).
   - Each companion has their own personality, and your hero speaks in the personality you pick: Heroic, Cheerful, Grim or Snarky.
   - Goblins and bosses taunt you.
-  - Every character speaks with their own voice through your device's built-in speech synthesis (free, offline). The narrator voice is optional.
+  - Every character speaks with their own voice through your device's built-in speech synthesis (free, offline). A narrator (the Game Master) reads the story aloud.
 - **Optional live AI banter**: enter your own Anthropic API key in Settings → Live AI banter, and Claude writes fresh dialogue for each story scene as you play. The key stays on your device; if anything fails, the game falls back to its written lines.
 - Works offline as an installable PWA. Everything (art, music, sound effects) is generated procedurally. No build step, no dependencies.
 

@@ -35,18 +35,16 @@ for (const [k, list] of Object.entries(GM_MORE.heroActions || {})) HERO_ACTIONS[
 SCENE_INTROS.push(...(GM_MORE.sceneIntros || []));
 CAMP_INTROS.push(...(GM_MORE.campIntros || []));
 
-export const gmSettings = { mode: 'full' };
+export const gmSettings = { mode: 'tips' }; // mirrors voiceSettings.gm; set by the UI
 
 const VICTORY_LINES = ['And the battle is won.', 'Silence falls over the battlefield. You are victorious.', 'The last foe falls. Well played.'];
 export const fallenLine = (name) => `${name} has fallen. The dice can be cruel.`;
 
-// Every fixed GM line (for the recorded voice pack).
+// Every GM line that is spoken (for the recorded voice pack): the scene framing read in story
+// scenes. Rules tips, dice rolls and battle announcements are shown on screen, not spoken.
 export function ALL_GM_LINES() {
-  return [
-    ...Object.values(ACTIONS).flat(), ...SCENE_INTROS, ...CAMP_INTROS, ...VICTORY_LINES,
-    ...['Brannoc', 'Tamsin', 'Quillan', 'Pip'].map(fallenLine),
-  ];
-} // mirrors voiceSettings.gm; set by the UI
+  return [...Object.values(ACTIONS).flat(), ...SCENE_INTROS, ...CAMP_INTROS];
+}
 
 export function sceneIntro(camp = false) { return pick(camp ? CAMP_INTROS : SCENE_INTROS); }
 

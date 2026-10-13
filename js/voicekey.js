@@ -28,3 +28,25 @@ export function packVoice(speaker) {
   if (speaker.kind === 'monster') return MONSTER_PACK[speaker.monsterKey] || 'thug';
   return 'gm'; // gm + narrator
 }
+
+// Lines that say the player's name can't be pre-recorded as written. Where the name is only
+// a form of address ("What brought you here, Quinlin?"), the recording leaves it out
+// ("What brought you here?"). Returns null when the name is part of the sentence itself.
+export const NAME_TOKEN = '\u0000PLAYER\u0000';
+const esc = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+export function spokenForm(text, name = NAME_TOKEN) {
+  if (!name) return text;
+  const n = esc(name);
+  const cap = (s) => s.charAt(0).toUpperCase() + s.slice(1);
+  let t = String(text)
+    .replace(new RegExp(`(^|[.!?…]["”']?\\s+)${n}[.!?]+\\s*`, 'g'), '$1') // "Quinlin! Over here." -> "Over here."
+    .replace(new RegExp(`,\\s*${n}(?=\\s*[.!?…,;:)"”']|\\s*[—–-]|$)`, 'g'), '') // "Thanks, Quinlin!" -> "Thanks!"
+    .replace(new RegExp(`(^|[.!?…]["”']?\\s+)${n},\\s*(\\S)`, 'g'), (m, pre, c) => pre + cap(c)); // "Quinlin, come here." -> "Come here."
+  t = normalizeLine(t);
+  return !t || t.includes(name) ? null : t;
+}
+
+// Story narration is looked up whole, then paragraph by paragraph, then sentence by sentence,
+// so only the sentences that say the player's name need the device voice.
+export const paragraphs = (text) => String(text).split(/\n\s*\n/).map(normalizeLine).filter(Boolean);
+export const sentences = (para) => (normalizeLine(para).match(/[^.!?…]+(?:[.!?…]+["”')]*|$)/g) || [para]).map(normalizeLine).filter(Boolean);
