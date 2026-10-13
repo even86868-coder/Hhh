@@ -13,6 +13,12 @@ export function speakerOf(c) {
 }
 function barkKey(c) { return c.isPlayer ? heroPersonality(c) : c.name; }
 
+// Skip lines that name a companion who isn't travelling with you (the player's own role is left out).
+const COMPANION_NAMES = ['Brannoc', 'Tamsin', 'Quillan', 'Pip'];
+export function mentionsAbsent(text, party) {
+  return COMPANION_NAMES.some((n) => new RegExp(`\\b${n}\\b`).test(text) && !party.some((c) => c.name === n && !c.isPlayer && !c.dead));
+}
+
 // ------------------------------------------------------------------ story scenes
 function resolveLines(lines, party) {
   const hero = party[0];
@@ -22,7 +28,9 @@ function resolveLines(lines, party) {
     const c = l.who === 'hero' ? hero : byRole(l.who);
     if (!c) continue;
     const raw = typeof l.text === 'string' ? l.text : l.text[heroPersonality(hero)];
-    out.push({ c, text: fill(raw, { hero: hero.name }) });
+    const text = fill(raw, { hero: hero.name });
+    if (mentionsAbsent(text, party)) continue;
+    out.push({ c, text });
   }
   return out;
 }
@@ -75,7 +83,15 @@ export class Barker {
     return true;
   }
 
-  pc(unit, event, vars, opts) { return unit?.c ? this.say(unit, barkFor(event, barkKey(unit.c), vars), opts) : false; }
+  pc(unit, event, vars, opts) {
+    if (!unit?.c) return false;
+    const party = this.state.party;
+    for (let i = 0; i < 6; i++) {
+      const line = barkFor(event, barkKey(unit.c), vars);
+      if (line && !mentionsAbsent(line.replace(vars?.t || '\u0000', '').replace(vars?.src || '\u0000', '').replace(vars?.a || '\u0000', ''), party)) return this.say(unit, line, opts);
+    }
+    return false;
+  }
   monster(unit, opts) { return unit && !unit.c ? this.say(unit, monsterBark(unit.key), opts) : false; }
 
   livingParty(e, except) { return e.units.filter((u) => u.side === 'party' && u.conscious() && u !== except); }

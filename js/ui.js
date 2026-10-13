@@ -866,6 +866,8 @@ class CombatUI {
     engine.inventory = G.state;
     this.e = engine;
     window.__combat = this;
+    // Loyal companions fight with extra heart (+1 attack, like bless).
+    for (const u of engine.units) if (u.c && !u.c.isPlayer && G.state.flags[`loyal_${u.c.name}`]) u.st.blessed = { r: Infinity };
     // Nualia falters if you reached her heart
     if (G.state.flags.nualiaFalter) { const n = engine.units.find((u) => u.key === 'nualia'); if (n) n.st.shaken = { r: 4 }; }
     playMusic(this.enc.music || 'battle');

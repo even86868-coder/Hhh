@@ -295,7 +295,7 @@ export const STORY = {
     text: `The Nettlewood ends at a sea cliff. Across a gap of churning waves, a tangle of thorns crowns a rocky island: Thistletop. A rickety rope bridge sways between the cliffs. Goblin archers lounge at the far end.`,
     choices: [
       { t: 'Storm the bridge!', go: 'bridge_fight' },
-      { t: 'Climb down the cliff and scale the island.', check: { skill: 'climb', dc: 15, who: 'player' }, pass: 'climb_win', fail: 'climb_fail' },
+      { t: 'Climb down the cliff and scale the island.', check: { skill: 'climb', dc: 15, who: 'player', bonus: (s) => (s.flags.sp_tsutoIntel ? 4 : 0) }, pass: 'climb_win', fail: 'climb_fail' },
       { t: 'Bluff: "We\'re mercenaries! The Mistress hired us!"', check: { skill: 'bluff', dc: 18, who: 'player', bonus: (s) => (s.flags.journal ? 2 : 0) }, pass: 'bluff_bridge', fail: 'bridge_fight' },
     ],
   },
@@ -391,6 +391,20 @@ export const STORY = {
       else lines.push('Beneath the Glassworks, the runewell still hums. Some nights, the dockworkers swear they hear it.');
       if (s.flags.orikSpared) lines.push('Orik Vancaskerkin turns up at the sheriff\'s office, asking for honest work. Hemlock, to everyone\'s surprise, hires him.');
       if (s.flags.goblinKing) lines.push('The Thistletop goblins now refer to you as "Big Chief Longshanks" and leave dead fish on the town walls as tribute.');
+      if (s.flags.tt_goblinChief) lines.push(s.flags.tt_nibsyChief ? 'Out in the Nettlewood, Chief Nibsy rules the Thistletop goblins with a firm hand and a very large hat, and Chuffwhistle serves proudly as Royal Counter of Things. Not one goblin has set a fire since.' : 'Chief Chuffwhistle keeps the pact you made in the pit: no more burning longshanks towns. Mostly. There was one small incident with a haystack.');
+      else if (s.flags.tt_goblinFriend) lines.push('Every few weeks, a little bundle appears on your doorstep: a shiny button, a dead fish, a drawing of you looking heroic. Nibsy remembers.');
+      if (s.flags.tt_pitFreed && !s.flags.tt_goblinChief) lines.push('The goblins you freed from the pit scattered into the Nettlewood. Some of them, you suspect, are still running.');
+      if (s.flags.tt_sealed) lines.push('Beneath Thistletop, the vault you sealed stays silent. Whatever waits there, it will keep waiting.');
+      else if (s.flags.tt_sealCracked) lines.push('Some nights, fishermen near Thistletop swear they hear something huge padding through the dark under the island, and a growling voice that whispers a single word: "Soon."');
+      else if (s.flags.tt_vaultLeft) lines.push('No one has gone back to the sealed vault beneath Thistletop. No one wants to.');
+      if (s.flags.sp_sczarniEnemy && s.flags.sp_sczarniBroken) lines.push('With the Sczarni gang broken, the docks are quieter. Sheriff Hemlock buys you an ale and pretends it\'s an accident.');
+      else if (s.flags.sp_sczarniFavor || s.flags.sp_sczarniFooled) lines.push('The Sczarni still tip their hats to you on the docks. You\'re not sure if that\'s good.');
+      if (s.flags.sp_hagfishChampion) lines.push('Your name is carved above the Hagfish tank, next to a crude drawing of you looking slightly green.');
+      if (s.flags.sp_ameikoBond) lines.push('Ameiko keeps a table by the fire reserved for you. It has a little sign. It says "Family."');
+      const loyal = ['Brannoc', 'Tamsin', 'Quillan', 'Pip'].filter((n) => s.flags[`loyal_${n}`]);
+      const rift = ['Brannoc', 'Tamsin', 'Quillan', 'Pip'].filter((n) => s.flags[`rift_${n}`]);
+      if (loyal.length) lines.push(`${loyal.join(' and ').replace(/ and (?=.* and )/g, ', ')} ${loyal.length > 1 ? 'have' : 'has'} become more than companions. Whatever comes next, ${loyal.length > 1 ? 'they' : 'that friend'} will be at your side.`);
+      if (rift.length) lines.push(`Things are still strained with ${rift.join(' and ')}. Some wounds take longer than a chapter to heal.`);
       if (s.flags.aldernSaved) lines.push('A letter arrives from Magnimar, scented and pressed with a wax seal: Aldern Foxglove begs you to visit his family estate. The letter is very long. It mentions you by name eleven times.');
       lines.push('Ameiko raises a glass at the Rusty Dragon. "To the heroes of Sandpoint!" The room roars.\n\nBut far to the north, in the frozen peaks, something ancient opens its eyes.\n\nCHAPTER 1 COMPLETE\nThe adventure continues in Chapter 2: The Skinsaw Murders.');
       return lines.join('\n\n');
