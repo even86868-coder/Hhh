@@ -10,8 +10,8 @@
     "narrationModel": "eleven_v4_turbo",
     "format": "mp3_44100_64",
     "creditsPerChar": {
-      "eleven_v4": 1,
-      "eleven_v4_turbo": 0.5,
+      "eleven_v4": 0.5,
+      "eleven_v4_turbo": 0.25,
       "eleven_multilingual_v2": 1,
       "eleven_flash_v2_5": 0.5
     },
