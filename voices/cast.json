@@ -681,7 +681,7 @@
       "elevenlabsName": "Roger - Laid-Back, Casual, Resonant"
     },
     "ameiko": {
-      "elevenlabs": "",
+      "elevenlabs": "pFZP5JQG7iQjIQuC4Bku",
       "want": {
         "gender": "female",
         "age": [
@@ -711,10 +711,11 @@
         "style": 0.35
       },
       "openai": "nova",
-      "direction": "Ameiko Kaijitsu: sharp-witted innkeeper and retired adventurer. Warm, dry, confident."
+      "direction": "Ameiko Kaijitsu: sharp-witted innkeeper and retired adventurer. Warm, dry, confident.",
+      "elevenlabsName": "Lily - Velvety Actress"
     },
     "zantus": {
-      "elevenlabs": "",
+      "elevenlabs": "nPczCjzI2devNBz1zQrb",
       "want": {
         "gender": "male",
         "age": [
@@ -744,10 +745,11 @@
         "style": 0.35
       },
       "openai": "ash",
-      "direction": "Father Zantus: a kind, gentle priest of the Dawnflower. Calm and caring."
+      "direction": "Father Zantus: a kind, gentle priest of the Dawnflower. Calm and caring.",
+      "elevenlabsName": "Brian - Deep, Resonant and Comforting"
     },
     "hemlock": {
-      "elevenlabs": "",
+      "elevenlabs": "nPczCjzI2devNBz1zQrb",
       "want": {
         "gender": "male",
         "age": [
@@ -776,10 +778,11 @@
         "style": 0.35
       },
       "openai": "onyx",
-      "direction": "Sheriff Hemlock: stern, weary, fair. Few words, gravel voice."
+      "direction": "Sheriff Hemlock: stern, weary, fair. Few words, gravel voice.",
+      "elevenlabsName": "Brian - Deep, Resonant and Comforting"
     },
     "aldern": {
-      "elevenlabs": "",
+      "elevenlabs": "N2lVS1w4EtoT3dr4eOWO",
       "want": {
         "gender": "male",
         "age": [
@@ -808,10 +811,11 @@
         "style": 0.35
       },
       "openai": "fable",
-      "direction": "Aldern Foxglove: a breathless, flattering young nobleman, a little too eager."
+      "direction": "Aldern Foxglove: a breathless, flattering young nobleman, a little too eager.",
+      "elevenlabsName": "Callum - Husky Trickster"
     },
     "shalelu": {
-      "elevenlabs": "",
+      "elevenlabs": "Xb7hH8MSUJpSbSDYk0k2",
       "want": {
         "gender": "female",
         "age": [
@@ -840,10 +844,11 @@
         "style": 0.35
       },
       "openai": "shimmer",
-      "direction": "Shalelu: a cool, terse elven ranger who has seen too much."
+      "direction": "Shalelu: a cool, terse elven ranger who has seen too much.",
+      "elevenlabsName": "Alice - Clear, Engaging Educator"
     },
     "mirela": {
-      "elevenlabs": "",
+      "elevenlabs": "FGY2WhTYpPnrIDTdsKH5",
       "want": {
         "gender": "female",
         "age": [
@@ -873,10 +878,11 @@
         "style": 0.35
       },
       "openai": "shimmer",
-      "direction": "Mirela: a silky, dangerous Sczarni boss who calls Pip little rat."
+      "direction": "Mirela: a silky, dangerous Sczarni boss who calls Pip little rat.",
+      "elevenlabsName": "Laura - Enthusiast, Quirky Attitude"
     },
     "granny": {
-      "elevenlabs": "",
+      "elevenlabs": "XrExE9yKIg1WjnnlVkGX",
       "want": {
         "gender": "female",
         "age": [
@@ -904,10 +910,11 @@
         "style": 0.35
       },
       "openai": "sage",
-      "direction": "An old woman of the coast: raspy, blunt, warm underneath."
+      "direction": "An old woman of the coast: raspy, blunt, warm underneath.",
+      "elevenlabsName": "Matilda - Knowledgable, Professional"
     },
     "oldman": {
-      "elevenlabs": "",
+      "elevenlabs": "adZJnAl6IYZw4EYI9FVd",
       "want": {
         "gender": "male",
         "age": [
@@ -935,10 +942,11 @@
         "style": 0.35
       },
       "openai": "ash",
-      "direction": "An old man: a scholar, fisherman or broken veteran. Shaky and heartfelt."
+      "direction": "An old man: a scholar, fisherman or broken veteran. Shaky and heartfelt.",
+      "elevenlabsName": "Nigel Cohen - Mysterious & Deep"
     },
     "townsman": {
-      "elevenlabs": "",
+      "elevenlabs": "bIHbv24MWmeRgasZH58o",
       "want": {
         "gender": "male",
         "age": [
@@ -966,10 +974,11 @@
         "style": 0.35
       },
       "openai": "echo",
-      "direction": "A Sandpoint townsman: a nervous deputy, a recruit, a barkeep."
+      "direction": "A Sandpoint townsman: a nervous deputy, a recruit, a barkeep.",
+      "elevenlabsName": "Will - Relaxed Optimist"
     },
     "woman": {
-      "elevenlabs": "",
+      "elevenlabs": "Xb7hH8MSUJpSbSDYk0k2",
       "want": {
         "gender": "female",
         "age": [
@@ -997,10 +1006,11 @@
         "style": 0.35
       },
       "openai": "coral",
-      "direction": "A Sandpoint townswoman: a no-nonsense militia sergeant."
+      "direction": "A Sandpoint townswoman: a no-nonsense militia sergeant.",
+      "elevenlabsName": "Alice - Clear, Engaging Educator"
     },
     "child": {
-      "elevenlabs": "",
+      "elevenlabs": "pFZP5JQG7iQjIQuC4Bku",
       "want": {
         "gender": "female",
         "age": [
@@ -1028,7 +1038,8 @@
         "style": 0.35
       },
       "openai": "coral",
-      "direction": "Wren: a small sick orphan girl, quiet and hopeful."
+      "direction": "Wren: a small sick orphan girl, quiet and hopeful.",
+      "elevenlabsName": "Lily - Velvety Actress"
     }
   }
 }
