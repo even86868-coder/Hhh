@@ -1,4 +1,4 @@
-name: Build PC app
+name: Build PC and Android apps
 on:
   push:
     branches: [main]
@@ -42,8 +42,31 @@ jobs:
             release/*.AppImage
             dist/*.html
           if-no-files-found: error
+  android:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - run: npm ci
+      - name: Build Android APK
+        run: bash tools/build-android.sh
+        env:
+          BUILD_NUMBER: ${{ github.run_number }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: runelords-android
+          path: dist/*.apk
+          if-no-files-found: error
   release:
-    needs: build
+    needs: [build, android]
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/download-artifact@v4
@@ -62,7 +85,9 @@ jobs:
             files/**/*.dmg
             files/**/*.AppImage
             files/**/*.html
+            files/**/*.apk
           body: |
+            **Android phone or tablet:** open this page on the phone, download `Runelords-Android.apk` and tap it to install. If asked, allow your browser to install apps ("Install unknown apps"). Updates install over the old version and keep your save.
             **Windows:** download `Runelords-Setup-*.exe` (installer) or `Runelords-Portable-*.exe` (no install, just run it).
             Windows may show "Windows protected your PC": click **More info → Run anyway** (the app isn't code-signed).
             **Mac:** download the `.dmg`, drag Runelords to Applications, then right-click it → **Open** the first time.
