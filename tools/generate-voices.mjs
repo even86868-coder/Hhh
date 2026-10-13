@@ -1,5 +1,6 @@
 // Generates the recorded voice pack: one audio file per spoken line.
 //   node tools/generate-voices.mjs --dry-run        # count lines/characters, no API calls
+//   node tools/generate-voices.mjs --sample 20      # a few lines from every voice, to audition the cast
 //   OPENAI_API_KEY=... node tools/generate-voices.mjs [--limit 50] [--voice Pip]
 //   ELEVENLABS_API_KEY=... node tools/generate-voices.mjs   (with provider "elevenlabs" in voices/cast.json)
 // Already-generated files are skipped, so it's safe to re-run after adding new lines.
@@ -102,7 +103,30 @@ function writeIndex() {
 
 const all = collectLines({ heroVoices: cast.heroVoices }).filter((l) => !onlyVoice || l.voice === onlyVoice);
 const missing = all.filter((l) => !existsSync(fileFor(l.key)));
-const todo = missing.slice(0, limit);
+// --sample N: a spread of N lines across every voice and kind of line, to audition the cast.
+function spread(lines, n) {
+  // Round-robin over voices; each voice cycles through its kinds of line (narration first).
+  const order = ['story', 'bark', 'monster', 'scene', 'camp', 'gm'];
+  const byVoice = new Map();
+  for (const l of lines) {
+    const kind = l.source.split(':')[0];
+    if (!byVoice.has(l.voice)) byVoice.set(l.voice, new Map());
+    const kinds = byVoice.get(l.voice);
+    if (!kinds.has(kind)) kinds.set(kind, []);
+    kinds.get(kind).push(l);
+  }
+  const queues = [...byVoice.values()].map((kinds) => {
+    const lists = [...kinds.entries()].sort((x, y) => order.indexOf(x[0]) - order.indexOf(y[0])).map(([, list]) => list);
+    const q = [];
+    for (let i = 0; lists.some((list) => list[i]); i++) for (const list of lists) if (list[i]) q.push(list[i]);
+    return q;
+  });
+  const out = [];
+  for (let i = 0; out.length < Math.min(n, lines.length); i++) for (const q of queues) if (q[i] && out.length < n) out.push(q[i]);
+  return out;
+}
+const sample = +(opt('--sample') || 0);
+const todo = sample ? spread(missing, sample) : missing.slice(0, limit);
 const chars = todo.reduce((s, l) => s + l.text.length, 0);
 console.log(`${all.length} lines in the game, ${all.length - missing.length} already recorded, ${todo.length} to record now (${chars.toLocaleString()} characters) with ${provider}.`);
 if (provider === 'elevenlabs') {

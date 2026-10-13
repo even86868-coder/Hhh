@@ -46,7 +46,7 @@ jobs:
         run: node tools/generate-voices.mjs --dry-run --provider ${{ inputs.provider }}
       - name: Record
         if: "!startsWith(inputs.mode, 'cast only')"
-        run: node tools/generate-voices.mjs --provider ${{ inputs.provider }} ${{ startsWith(inputs.mode, 'record a sample') && '--limit 20' || '' }}
+        run: node tools/generate-voices.mjs --provider ${{ inputs.provider }} ${{ startsWith(inputs.mode, 'record a sample') && '--sample 20' || '' }}
       - name: Commit casting and clips
         if: always()
         run: |
