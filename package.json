@@ -1,1 +1,36 @@
-{"type":"module"}
+{
+  "name": "runelords-pixel",
+  "productName": "Runelords",
+  "version": "1.0.0",
+  "description": "A cute pixel-art Pathfinder adventure: Rise of the Runelords, Chapter 1.",
+  "type": "module",
+  "main": "desktop/main.cjs",
+  "author": "even86868-coder",
+  "license": "UNLICENSED",
+  "private": true,
+  "scripts": {
+    "start": "electron .",
+    "test": "node tests/sim.mjs 10",
+    "standalone": "node tools/build-standalone.mjs",
+    "dist:win": "electron-builder --win",
+    "dist:mac": "electron-builder --mac",
+    "dist:linux": "electron-builder --linux"
+  },
+  "devDependencies": {
+    "electron": "44.4.5",
+    "electron-builder": "26.16.1",
+    "esbuild": "0.28.2"
+  },
+  "build": {
+    "appId": "io.github.even86868coder.runelords",
+    "productName": "Runelords",
+    "directories": { "output": "release" },
+    "files": ["index.html", "manifest.webmanifest", "sw.js", "css/**", "js/**", "icons/**", "desktop/**"],
+    "icon": "icons/icon-512.png",
+    "win": { "target": ["nsis", "portable"] },
+    "nsis": { "oneClick": false, "allowToChangeInstallationDirectory": true, "artifactName": "Runelords-Setup-${version}.${ext}" },
+    "portable": { "artifactName": "Runelords-Portable-${version}.${ext}" },
+    "mac": { "target": ["dmg"], "category": "public.app-category.role-playing-games", "artifactName": "Runelords-${version}-mac.${ext}" },
+    "linux": { "target": ["AppImage"], "category": "Game", "artifactName": "Runelords-${version}.${ext}" }
+  }
+}

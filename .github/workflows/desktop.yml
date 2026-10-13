@@ -1,0 +1,70 @@
+name: Build PC app
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, macos-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - name: Build Windows installer + portable exe
+        if: runner.os == 'Windows'
+        run: npx electron-builder --win --publish never
+      - name: Build macOS dmg
+        if: runner.os == 'macOS'
+        run: npx electron-builder --mac --publish never
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+      - name: Build Linux AppImage + single-file HTML
+        if: runner.os == 'Linux'
+        run: |
+          npx electron-builder --linux --publish never
+          npm run standalone
+      - uses: actions/upload-artifact@v4
+        with:
+          name: runelords-${{ runner.os }}
+          path: |
+            release/*.exe
+            release/*.dmg
+            release/*.AppImage
+            dist/*.html
+          if-no-files-found: error
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: files
+          merge-multiple: true
+      - run: find files -type f
+      - uses: softprops/action-gh-release@v2
+        with:
+          tag_name: build-${{ github.run_number }}
+          target_commitish: ${{ github.sha }}
+          name: Runelords (build ${{ github.run_number }})
+          make_latest: true
+          files: |
+            files/**/*.exe
+            files/**/*.dmg
+            files/**/*.AppImage
+            files/**/*.html
+          body: |
+            **Windows:** download `Runelords-Setup-*.exe` (installer) or `Runelords-Portable-*.exe` (no install, just run it).
+            Windows may show "Windows protected your PC": click **More info → Run anyway** (the app isn't code-signed).
+            **Mac:** download the `.dmg`, drag Runelords to Applications, then right-click it → **Open** the first time.
+            **Linux:** download the `.AppImage`, make it executable, run it.
+            **Any PC, no install:** download `Runelords.html` and double-click it to play in your browser.
