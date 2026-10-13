@@ -67,7 +67,22 @@ function setScreen(...kids) {
   a.append(...kids);
   if (same) { kids[0].classList.add('noanim'); window.scrollTo(0, y); } else window.scrollTo(0, 0);
   lastScreen = key;
+  keyHandler = null;
 }
+
+// Keyboard controls (desktop): number keys pick choices/actions, Enter confirms, Esc cancels.
+let keyHandler = null;
+document.addEventListener('keydown', (e) => {
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT' || e.repeat) return;
+  const m = document.querySelector('.modal:last-of-type');
+  if (m) {
+    if (e.key === 'Escape') m.querySelector('.x')?.click();
+    else if (e.key === 'Enter') { e.preventDefault(); (m.querySelector('.modal-actions .btn.primary') || m.querySelector('.modal-actions .btn:last-child'))?.click(); }
+    return;
+  }
+  if (keyHandler) keyHandler(e);
+});
+const digit = (e) => (/^[1-9]$/.test(e.key) ? +e.key - 1 : -1);
 
 export function toast(msg) {
   const t = h('div', { class: 'toast' }, msg);
@@ -192,8 +207,10 @@ function applyClassDefaults() {
   autoSkills();
 }
 function autoSkills() {
-  const n = trainedSkillCount(draftChar());
-  draft.skills = SKILL_PICKS[draft.cls].slice(0, n);
+  const c = draftChar();
+  const n = trainedSkillCount(c);
+  const order = [...new Set([...SKILL_PICKS[draft.cls], ...CLASSES[draft.cls].classSkills, ...Object.keys(SKILLS)])];
+  draft.skills = order.slice(0, n);
 }
 
 function renderCreator() {
@@ -466,6 +483,16 @@ function renderStory(node, notes = []) {
     }
   };
   typewrite(textEl, text, showChoices);
+  keyHandler = (e) => {
+    const list = [...choicesEl.querySelectorAll('.choice')];
+    const i = digit(e);
+    if (i >= 0 && list[i]) { list[i].click(); return; }
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      if (!list.length) textEl.click();
+      else if (list.length === 1) list[0].click();
+    }
+  };
 }
 
 function typewrite(el, text, done) {
@@ -627,12 +654,13 @@ class CombatUI {
 
   addLog(text, cls) {
     this.logLines.push({ text, cls });
-    const last = this.logLines.slice(-4);
+    const last = this.logLines.slice(window.innerWidth >= 900 ? -40 : -4);
     this.logEl.innerHTML = '';
-    for (const l of last) this.logEl.append(h('div', { class: `ll ${l.cls}` }, l.text));
+    for (const l of last) this.logEl.append(h('div', { class: `ll c-${l.cls}` }, l.text));
+    this.logEl.scrollTop = this.logEl.scrollHeight;
   }
   showFullLog() {
-    const body = h('div', { class: 'fulllog' }, this.logLines.map((l) => h('div', { class: `ll ${l.cls}` }, l.text)));
+    const body = h('div', { class: 'fulllog' }, this.logLines.map((l) => h('div', { class: `ll c-${l.cls}` }, l.text)));
     modal('Battle Log', body, [{ label: 'Close' }], { wide: true });
     setTimeout(() => { body.scrollTop = body.scrollHeight; }, 10);
   }
@@ -677,6 +705,14 @@ class CombatUI {
       this.unit = u;
       this.mode = null;
       sfx('click');
+      keyHandler = (e) => {
+        if (this.busy || !this.resolveTurn) return;
+        const i = digit(e);
+        const btns = [...this.actions.querySelectorAll('button')];
+        if (i >= 0 && btns[i] && !btns[i].disabled) btns[i].click();
+        else if (e.key === 'Escape') this.menu();
+        else if (e.key.toLowerCase() === 'e' && !this.mode) this.endPlayerTurn();
+      };
       this.menu();
     });
   }
@@ -721,7 +757,7 @@ class CombatUI {
     const prof = s.attacks.ranged[0];
     const needsReload = prof?.reload && !u.loaded;
     this.actions.innerHTML = '';
-    const B = (label, sub, fn, ok) => this.actions.append(h('button', { class: `act ${ok ? '' : 'off'}`, disabled: !ok, onclick: () => { sfx('click'); fn(); } }, h('b', {}, label), h('small', {}, sub)));
+    const B = (label, sub, fn, ok) => this.actions.append(h('button', { class: `act ${ok ? '' : 'off'}`, disabled: !ok, onclick: () => { sfx('click'); fn(); } }, h('kbd', {}, this.actions.children.length + 1), h('b', {}, label), h('small', {}, sub)));
     B('Move', `${s.speed} ft`, () => this.modeMove(), canMove);
     B('Attack', needsReload && attackable.every((t) => !e.adjacent(u, t)) ? 'reload+shoot' : 'standard', () => this.modeAttack(attackable), e.canUse('std') && attackable.length > 0);
     B('Cast', s.caster ? `${spells.length} spells` : '—', () => this.spellMenu(), !!s.caster && e.canUse('std') && spells.length > 0);

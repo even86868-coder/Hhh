@@ -15,6 +15,31 @@ A cute pixel-art phone game retelling **Chapter 1 (Burnt Offerings)** of the *Ri
 
 Want an App Store or Play Store build? The game is static HTML/JS, so it can be wrapped as-is with [Capacitor](https://capacitorjs.com/) (`npx cap init`, set `webDir` to this folder, `npx cap add ios` / `android`).
 
+## Play on your PC
+
+Every push to `main` builds the PC versions automatically and publishes them on the repo's **Releases** page (https://github.com/even86868-coder/Hhh/releases/latest):
+
+| File | What it is |
+| --- | --- |
+| `Runelords-Setup-x.y.z.exe` | Windows installer (Start menu + desktop shortcut) |
+| `Runelords-Portable-x.y.z.exe` | Windows, no install: just double-click |
+| `Runelords-x.y.z-mac.dmg` | macOS app |
+| `Runelords-x.y.z.AppImage` | Linux app |
+| `Runelords.html` | The whole game in one file: double-click to play in any browser |
+
+The apps aren't code-signed, so Windows may say "Windows protected your PC" (click **More info → Run anyway**). On a Mac, right-click the app and choose **Open** the first time.
+
+**Desktop controls:** mouse plus keyboard. Number keys `1`-`9` pick story choices and battle actions, `Esc` cancels, `E` ends your turn, `Enter` confirms dialogs, and `F11` toggles fullscreen in the app. On wide screens the battle map sits beside the controls and the full battle log.
+
+Build it yourself (needs Node.js 22):
+
+```sh
+npm install
+npm start                # run the desktop app
+npm run dist:win         # build Windows installer + portable exe into release/
+npm run standalone       # build dist/Runelords.html
+```
+
 ## Run locally
 
 ```sh
@@ -33,6 +58,8 @@ node tests/sim.mjs 20      # headless balance test: AI plays every battle with e
 | `js/story.js`, `js/maps.js` | The branching story graph and battle maps |
 | `js/sprites.js`, `js/render.js` | Procedural pixel art and the combat renderer |
 | `js/ui.js`, `js/game.js` | Screens, character creation, saves, story effects |
+| `desktop/main.cjs` | Electron wrapper for the PC app |
+| `tools/build-standalone.mjs` | Builds the single-file HTML version |
 
 To add Chapter 2, extend `STORY` with new nodes and `ENCOUNTERS` with new maps; the engine is data-driven.
 
