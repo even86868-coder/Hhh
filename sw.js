@@ -1,9 +1,10 @@
 // Offline cache: the whole game is static files.
-const CACHE = 'runelords-v1';
+const CACHE = 'runelords-v2';
 const FILES = [
   './', './index.html', './manifest.webmanifest', './css/style.css',
   './js/main.js', './js/ui.js', './js/game.js', './js/story.js', './js/rules.js', './js/dice.js', './js/combat.js',
   './js/ai.js', './js/spells.js', './js/monsters.js', './js/maps.js', './js/sprites.js', './js/render.js', './js/audio.js',
+  './js/dialogue.js', './js/voice.js', './js/talk.js', './js/aibanter.js', './js/vendor/anthropic-sdk.js',
   './icons/icon-192.png', './icons/icon-512.png',
 ];
 self.addEventListener('install', (e) => { e.waitUntil(caches.open(CACHE).then((c) => c.addAll(FILES)).then(() => self.skipWaiting())); });

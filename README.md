@@ -6,6 +6,13 @@ A cute pixel-art phone game retelling **Chapter 1 (Burnt Offerings)** of the *Ri
 - **3 AI companions** fill the party roles you didn't take (Brannoc the fighter, Tamsin the cleric, Quillan the wizard, Pip the rogue).
 - **A branching story**: 89 story nodes, 15 battle maps and 26 skill checks rolled with your real skill bonuses. Choices change routes, allies, the battles you fight and the ending.
 - **Tactical grid combat following the PF1 rules**: initiative; standard, move, swift, full-round and 5-ft step actions; attacks of opportunity; flanking; critical threats and confirmation; sneak attack; touch AC and flat-footed AC; cover; firing into melee; range increments; casting defensively; the 5/10 diagonal rule; difficult terrain; dying and stabilizing; damage reduction; saves; spell slots; channel energy; rage; smite evil; lay on hands; Power Attack; Cleave; Rapid Shot; and more.
+- **Watch mode**: tap 🤖 at any time and the AI plays for you. It makes story choices in character (based on your hero's personality and best skills), levels up, and fights every battle. Tap 🤖 again to take back control. **Watch AI Play** on the title screen starts a game with a random AI hero.
+- **Party dialogue and voices**:
+  - The party talks in story scenes, at campfires and mid-battle (speech bubbles over the pixel characters).
+  - Each companion has their own personality, and your hero speaks in the personality you pick: Heroic, Cheerful, Grim or Snarky.
+  - Goblins and bosses taunt you.
+  - Every character speaks with their own voice through your device's built-in speech synthesis (free, offline). The narrator voice is optional.
+- **Optional live AI banter**: enter your own Anthropic API key in Settings → Live AI banter, and Claude writes fresh dialogue for each story scene as you play. The key stays on your device; if anything fails, the game falls back to its written lines.
 - Works offline as an installable PWA. Everything (art, music, sound effects) is generated procedurally. No build step, no dependencies.
 
 ## Play on your phone
@@ -58,6 +65,9 @@ node tests/sim.mjs 20      # headless balance test: AI plays every battle with e
 | `js/story.js`, `js/maps.js` | The branching story graph and battle maps |
 | `js/sprites.js`, `js/render.js` | Procedural pixel art and the combat renderer |
 | `js/ui.js`, `js/game.js` | Screens, character creation, saves, story effects |
+| `js/dialogue.js` | Written dialogue: combat barks, scene banter, campfire talks, personalities |
+| `js/talk.js`, `js/voice.js` | Who says what and when; character voices via speech synthesis |
+| `js/aibanter.js` | Optional live banter through the Claude API (official SDK, bundled in `js/vendor/`, rebuilt with `node tools/build-vendor.mjs`) |
 | `desktop/main.cjs` | Electron wrapper for the PC app |
 | `tools/build-standalone.mjs` | Builds the single-file HTML version |
 

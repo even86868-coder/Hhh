@@ -11,6 +11,10 @@ import { aiTurn } from './ai.js';
 import { CombatView } from './render.js';
 import { SPELLS } from './spells.js';
 import { sfx, playMusic, stopMusic, settings as audioSettings, unlockAudio } from './audio.js';
+import { PERSONALITIES, DEFAULT_PERSONALITY } from './dialogue.js';
+import { speak, stopVoices, voiceSettings, VOICE_PRESETS, voiceAvailable } from './voice.js';
+import { aiSettings, AI_MODELS, getApiKey, setApiKey, testConnection, aiReady } from './aibanter.js';
+import { talkSettings, sceneLines, campLines, aiSceneLines, speakerOf, Barker } from './talk.js';
 
 // ------------------------------------------------------------------ helpers
 const $ = (s, root = document) => root.querySelector(s);
@@ -33,8 +37,18 @@ function h(tag, attrs = {}, ...kids) {
 const btn = (label, onclick, cls = '', disabled = false) => h('button', { class: `btn ${cls}`, onclick: (e) => { if (disabled) return; sfx('click'); onclick(e); }, disabled }, label);
 const app = () => $('#app');
 const prefs = { speed: 1, typewriter: true };
-try { Object.assign(prefs, JSON.parse(localStorage.getItem('runelords.prefs') || '{}')); Object.assign(audioSettings, prefs.audio || {}); } catch (e) { /* ignore */ }
-function savePrefs() { try { localStorage.setItem('runelords.prefs', JSON.stringify({ ...prefs, audio: audioSettings })); } catch (e) { /* ignore */ } }
+try {
+  Object.assign(prefs, JSON.parse(localStorage.getItem('runelords.prefs') || '{}'));
+  Object.assign(audioSettings, prefs.audio || {});
+  Object.assign(voiceSettings, prefs.voice || {});
+  Object.assign(talkSettings, prefs.talk || {});
+  Object.assign(aiSettings, prefs.ai || {});
+} catch (e) { /* ignore */ }
+function savePrefs() {
+  try { localStorage.setItem('runelords.prefs', JSON.stringify({ ...prefs, audio: audioSettings, voice: voiceSettings, talk: talkSettings, ai: { enabled: aiSettings.enabled, model: aiSettings.model } })); } catch (e) { /* ignore */ }
+}
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+const autoplay = () => !!G.state?.autoplay;
 
 function spriteCanvas(src, scale = 4, cls = 'sprite') {
   const c = h('canvas', { class: cls, width: 18 * scale, height: 18 * scale });
@@ -65,7 +79,7 @@ function setScreen(...kids) {
   const y = window.scrollY;
   a.innerHTML = '';
   a.append(...kids);
-  if (same) { kids[0].classList.add('noanim'); window.scrollTo(0, y); } else window.scrollTo(0, 0);
+  if (same) { kids[0].classList.add('noanim'); window.scrollTo(0, y); } else { window.scrollTo(0, 0); stopVoices(); }
   lastScreen = key;
   keyHandler = null;
 }
@@ -117,16 +131,17 @@ export function showTitle() {
     h('div', { class: 'menu' },
       cont ? btn('Continue', () => { unlockAudio(); if (load()) resumeGame(); }, 'primary') : null,
       btn('New Game', () => { unlockAudio(); if (cont) confirmNew(); else showCreator(); }, cont ? '' : 'primary'),
+      btn('🤖 Watch AI Play', () => { unlockAudio(); if (cont) confirmNew(startWatchMode); else startWatchMode(); }),
       btn('How to Play', showHelp),
       btn('Settings', showSettings),
       btn('About', showAbout)),
     h('div', { class: 'fineprint' }, 'Unofficial fan game. Uses the Pathfinder RPG 1e rules.')));
 }
 
-function confirmNew() {
+function confirmNew(then = showCreator) {
   modal('Start over?', h('p', {}, 'Starting a new game will overwrite your current save.'), [
     { label: 'Cancel' },
-    { label: 'New Game', cls: 'danger', onClick: () => { deleteSave(); showCreator(); } },
+    { label: 'New Game', cls: 'danger', onClick: () => { deleteSave(); then(); } },
   ]);
 }
 
@@ -144,7 +159,9 @@ function showHelp() {
       h('li', {}, 'Flanking: you and an ally on opposite sides of a foe each get +2 to hit, and rogues add sneak attack.'),
       h('li', {}, 'At 0 HP you are disabled; below 0 you are dying and lose 1 HP each round until stabilized. At negative HP equal to your Constitution, you die.'),
       h('li', {}, 'Diagonal movement costs 5 ft, then 10 ft, alternating. Brambles and rubble cost double.')),
-    h('h3', {}, 'Controls'), h('p', {}, 'Tap an action, then tap a highlighted square or target. Tap any creature to inspect it. The log shows every roll.')),
+    h('h3', {}, 'Controls'), h('p', {}, 'Tap an action, then tap a highlighted square or target. Tap any creature to inspect it. The log shows every roll.'),
+    h('h3', {}, 'Watch mode'), h('p', {}, 'Tap the 🤖 button any time to let the AI play for you: it makes story choices in character and fights your battles. Tap it again to take back control. "Watch AI Play" on the title screen starts a game with a random AI hero.'),
+    h('h3', {}, 'Voices & banter'), h('p', {}, 'Your party talks: in story scenes, at camp and during battle. Each character has their own voice using your device\'s built-in speech. Turn voices, the narrator and live AI banter on or off in Settings.')),
   [{ label: 'Got it!' }], { wide: true });
 }
 
@@ -164,10 +181,116 @@ function showSettings() {
       h('label', { class: 'row' }, 'Sound effects', btn(audioSettings.sfx ? 'On' : 'Off', () => { audioSettings.sfx = !audioSettings.sfx; savePrefs(); render(); })),
       h('label', { class: 'row' }, 'Battle speed', btn(`${prefs.speed}x`, () => { prefs.speed = prefs.speed >= 3 ? 1 : prefs.speed + 1; savePrefs(); render(); })),
       h('label', { class: 'row' }, 'Typewriter text', btn(prefs.typewriter ? 'On' : 'Off', () => { prefs.typewriter = !prefs.typewriter; savePrefs(); render(); })),
+      h('h3', {}, 'Voices & dialogue'),
+      h('label', { class: 'row' }, 'Character banter', btn(talkSettings.banter ? 'On' : 'Off', () => { talkSettings.banter = !talkSettings.banter; savePrefs(); render(); })),
+      h('label', { class: 'row' }, 'Speech bubbles in battle', btn(talkSettings.bubbles ? 'On' : 'Off', () => { talkSettings.bubbles = !talkSettings.bubbles; savePrefs(); render(); })),
+      voiceAvailable() ? h('label', { class: 'row' }, 'Character voices', btn(voiceSettings.enabled ? 'On' : 'Off', () => { voiceSettings.enabled = !voiceSettings.enabled; if (!voiceSettings.enabled) stopVoices(); savePrefs(); render(); })) : h('p', { class: 'hint' }, 'Voices are not supported on this device.'),
+      voiceAvailable() ? h('label', { class: 'row' }, 'Narrator reads the story', btn(voiceSettings.narrator ? 'On' : 'Off', () => { voiceSettings.narrator = !voiceSettings.narrator; savePrefs(); render(); })) : null,
+      voiceAvailable() ? h('label', { class: 'row' }, 'Voice volume', btn(`${Math.round(voiceSettings.volume * 100)}%`, () => { voiceSettings.volume = voiceSettings.volume >= 1 ? 0.25 : Math.round((voiceSettings.volume + 0.25) * 100) / 100; savePrefs(); speak('Like this?', { kind: 'companion', name: 'Pip' }, { queue: false }); render(); })) : null,
+      h('label', { class: 'row' }, 'Live AI banter', btn(aiSettings.enabled && getApiKey() ? 'On' : 'Set up', () => { document.querySelector('.modal')?.remove(); showAiSettings(); })),
     );
   };
   render();
   modal('Settings', body, [{ label: 'Done' }]);
+}
+
+function showAiSettings() {
+  const keyInput = h('input', { class: 'name-input', type: 'password', placeholder: 'sk-ant-...', value: getApiKey(), autocomplete: 'off' });
+  const modelSel = h('select', {}, AI_MODELS.map((m) => h('option', { value: m.id, selected: aiSettings.model === m.id }, m.name)));
+  const status = h('div', { class: 'small' }, aiSettings.lastError ? `Last error: ${aiSettings.lastError}` : '');
+  const apply = () => { setApiKey(keyInput.value); aiSettings.model = modelSel.value; };
+  modal('Live AI Banter', h('div', { class: 'help' },
+    h('p', {}, 'With live AI banter, Claude writes fresh dialogue for your party as you play, reacting to each story scene and to big battle moments. Without it, the game uses its written lines.'),
+    h('ul', {},
+      h('li', {}, 'Needs an internet connection and your own Anthropic API key (console.anthropic.com).'),
+      h('li', {}, 'Each story scene makes one small request to the API, billed to your key. Haiku is the cheapest option.'),
+      h('li', {}, 'Your key is stored only on this device and is sent only to Anthropic.')),
+    h('label', { class: 'field' }, 'API key', keyInput),
+    h('label', { class: 'field' }, 'Model', modelSel),
+    status), [
+    { label: 'Test', keep: true, onClick: async () => { apply(); aiSettings.enabled = true; status.textContent = 'Testing...'; const r = await testConnection(); status.textContent = r.ok ? `It works! ${r.lines.map((l) => `${l.speaker}: "${l.text}"`).join(' ')}` : `Failed: ${r.error}`; } },
+    { label: 'Turn off', onClick: () => { aiSettings.enabled = false; savePrefs(); toast('Live AI banter off. Using written dialogue.'); } },
+    { label: 'Save & turn on', cls: 'primary', onClick: () => { apply(); aiSettings.enabled = !!getApiKey(); savePrefs(); toast(aiSettings.enabled ? 'Live AI banter on!' : 'Enter an API key first.'); } },
+  ], { wide: true });
+}
+
+// ------------------------------------------------------------------ watch mode (AI plays everything)
+const FEAT_PREFS = {
+  fighter: ['powerAttack', 'weaponFocus', 'dodge', 'cleave', 'toughness', 'improvedInit', 'ironWill'],
+  barbarian: ['powerAttack', 'toughness', 'cleave', 'improvedInit', 'ironWill'],
+  paladin: ['powerAttack', 'weaponFocus', 'toughness', 'cleave', 'ironWill'],
+  ranger: ['pointBlank', 'preciseShot', 'weaponFocus', 'toughness', 'improvedInit', 'rapidShot'],
+  rogue: ['weaponFinesse', 'dodge', 'improvedInit', 'pointBlank', 'preciseShot', 'toughness'],
+  cleric: ['toughness', 'extraChannel', 'combatCasting', 'ironWill'],
+  wizard: ['combatCasting', 'toughness', 'improvedInit', 'lightningReflexes'],
+  sorcerer: ['combatCasting', 'toughness', 'improvedInit', 'lightningReflexes'],
+};
+function autoFeats(c, L, need) {
+  const chosen = [];
+  const order = [...FEAT_PREFS[c.cls], ...Object.keys(FEATS)];
+  const combatOnly = (c.cls === 'fighter' || c.cls === 'rogue') && L % 2 === 0 && L !== 3;
+  for (const k of order) {
+    if (chosen.length >= need) break;
+    if (chosen.includes(k)) continue;
+    if (featAllowed({ ...c, feats: [...c.feats, ...chosen] }, k, combatOnly && chosen.length === 0 && need === 1)) chosen.push(k);
+  }
+  return chosen;
+}
+
+function startWatchMode() {
+  const pickOf = (o) => o[Math.floor(Math.random() * o.length)];
+  const race = pickOf(Object.keys(RACES)), cls = pickOf(Object.keys(CLASSES));
+  draft = freshDraft();
+  Object.assign(draft, { race, cls, name: randomName(), personality: DEFAULT_PERSONALITY[cls] });
+  applyClassDefaults();
+  draft.appearance = { skin: Math.floor(Math.random() * SKIN.length), hair: Math.floor(Math.random() * HAIR.length), hairStyle: Math.floor(Math.random() * HAIR_STYLES.length), outfit: Math.floor(Math.random() * OUTFIT.length), beard: race === 'dwarf' || Math.random() < 0.2, voice: pickOf(Object.keys(VOICE_PRESETS)) };
+  const base = draftChar();
+  draft.feats = autoFeats({ ...base, feats: [] }, 1, featsGainedAt(base, 1));
+  if (cls === 'fighter' && !draft.feats.some((f) => FEATS[f].combat)) draft.feats[0] = 'powerAttack';
+  autoSkills();
+  beginAdventure(true);
+  toast(`🤖 The AI is playing ${draft.name} the ${RACES[race].name} ${CLASSES[cls].name}. Tap 🤖 to take over.`);
+}
+
+function autoPill(onChange, compact = true) {
+  const label = () => (autoplay() && compact === false ? '🤖 AI' : '🤖');
+  const b = h('button', { class: `autopill ${autoplay() ? 'on' : ''}`, title: 'Let the AI play', 'aria-label': 'Toggle AI autoplay' }, label());
+  b.addEventListener('click', () => {
+    sfx('click');
+    G.state.autoplay = !G.state.autoplay;
+    save();
+    b.classList.toggle('on', autoplay());
+    b.textContent = label();
+    toast(autoplay() ? 'The AI is playing. Tap 🤖 to take over.' : 'You have control!');
+    onChange?.();
+  });
+  return b;
+}
+
+// Pick a story choice in character: likely-success checks, flavored by personality.
+const PERSONA_TASTE = {
+  heroic: /save|protect|help|fight|attack|charge|surrender|spare|storm|challenge|face|father|tend|this ends/i,
+  cheerful: /charm|story|toast|chat|help|thank|ask|knife|crowd|boar|invitation/i,
+  grim: /attack|fight|now|kick|end|charge|press forward|smash|alone/i,
+  snarky: /bluff|mercenar|escape|sneak|pick the|lock|stroll|mock|challenge/i,
+};
+function aiPick(node) {
+  const list = choicesFor(node);
+  const persona = player().personality || 'heroic';
+  let best = null;
+  for (const ch of list) {
+    let score = 0.55 + Math.random() * 0.15;
+    if (ch.check) {
+      const pv = previewCheck(ch.check);
+      const bonus = ch.check.bonus ? ch.check.bonus(G.state) : 0;
+      const p = pv && pv.mod !== null ? Math.min(0.95, Math.max(0.05, (21 - (ch.check.dc - pv.mod - bonus)) / 20)) : 0;
+      score = p * 1.05;
+    }
+    if (PERSONA_TASTE[persona].test(ch.t)) score += 0.22;
+    if (/head back|return to|politely escape/i.test(ch.t) && list.length > 1) score -= 0.15;
+    if (!best || score > best.score) best = { ch, score };
+  }
+  return best?.ch;
 }
 
 // ------------------------------------------------------------------ character creation
@@ -188,7 +311,7 @@ const SKILL_PICKS = {
 
 let draft = null;
 function freshDraft() {
-  return { name: '', race: 'human', cls: 'fighter', base: { ...ARRAYS.fighter }, flex: 'str', feats: [], skills: [], kit: 0, favoredEnemy: 'goblinoid', appearance: { skin: 1, hair: 1, hairStyle: 0, outfit: 0, beard: false }, step: 0 };
+  return { name: '', race: 'human', cls: 'fighter', base: { ...ARRAYS.fighter }, flex: 'str', feats: [], skills: [], kit: 0, favoredEnemy: 'goblinoid', personality: 'heroic', appearance: { skin: 1, hair: 1, hairStyle: 0, outfit: 0, beard: false, voice: 'warm' }, step: 0 };
 }
 const draftChar = () => createCharacter({ ...draft, isPlayer: true, name: draft.name || 'Hero' });
 const pointsSpent = () => ABILS.reduce((s, k) => s + POINT_COST[draft.base[k]], 0);
@@ -231,7 +354,7 @@ function renderCreator() {
   const valid = stepValid();
   const nav = h('div', { class: 'creator-nav' },
     btn(draft.step === 0 ? 'Title' : 'Back', () => { if (draft.step === 0) showTitle(); else { draft.step--; renderCreator(); } }),
-    draft.step < 4 ? btn('Next', () => { if (!valid.ok) { toast(valid.msg); return; } draft.step++; renderCreator(); }, valid.ok ? 'primary' : 'dim') : btn('Begin Adventure!', beginAdventure, 'primary'));
+    draft.step < 4 ? btn('Next', () => { const v = stepValid(); if (!v.ok) { toast(v.msg); return; } draft.step++; renderCreator(); }, valid.ok || draft.step === 0 ? 'primary' : 'dim') : btn('Begin Adventure!', () => beginAdventure(), 'primary'));
   setScreen(h('div', { class: 'screen creator' }, h('h2', { class: 'screen-title' }, 'Create Your Hero'), steps, preview, h('div', { class: 'creator-body' }, body), nav));
 }
 
@@ -349,6 +472,12 @@ function creatorLooks() {
     h('h3', {}, 'Hair color'), swatches(HAIR, 'hair'),
     h('h3', {}, 'Hair style'), h('div', { class: 'row-btns wrap' }, HAIR_STYLES.map((n, i) => btn(n, () => { ap.hairStyle = i; renderCreator(); }, ap.hairStyle === i ? 'on small' : 'small'))),
     h('h3', {}, 'Outfit'), swatches(OUTFIT, 'outfit'),
+    h('h3', {}, 'Personality'),
+    h('div', { class: 'cards' }, Object.entries(PERSONALITIES).map(([k, pp]) => h('button', { class: `card ${draft.personality === k ? 'sel' : ''}`, onclick: () => { draft.personality = k; renderCreator(); } }, h('div', { class: 'card-title' }, pp.name), h('div', { class: 'card-desc' }, pp.desc)))),
+    voiceAvailable() ? h('div', {}, h('h3', {}, 'Voice'), h('div', { class: 'row-btns wrap' }, Object.entries(VOICE_PRESETS).map(([k, v]) => btn(`▶ ${v.name}`, () => {
+      ap.voice = k; renderCreator();
+      speak({ heroic: 'For Sandpoint! Stand with me!', cheerful: 'Hi there! This is going to be fun!', grim: 'Let\'s get this over with.', snarky: 'Oh great. Goblins. My favorite.' }[draft.personality || 'heroic'], { kind: 'hero', preset: k }, { queue: false });
+    }, ap.voice === k ? 'on small' : 'small')))) : null,
     h('div', { class: 'row-btns' }, btn(ap.beard ? 'Beard: yes' : 'Beard: no', () => { ap.beard = !ap.beard; renderCreator(); }, 'small'),
       btn('🎲 Randomize', () => { ap.skin = Math.floor(Math.random() * SKIN.length); ap.hair = Math.floor(Math.random() * HAIR.length); ap.hairStyle = Math.floor(Math.random() * HAIR_STYLES.length); ap.outfit = Math.floor(Math.random() * OUTFIT.length); renderCreator(); }, 'small')));
 }
@@ -364,11 +493,13 @@ function creatorReady() {
     })));
 }
 
-function beginAdventure() {
+function beginAdventure(watch = false) {
   const c = draftChar();
   c.name = draft.name.trim() || 'Hero';
   c.isPlayer = true;
+  c.personality = draft.personality || 'heroic';
   newGame(c);
+  G.state.autoplay = watch === true;
   save();
   enterNode(START);
 }
@@ -434,8 +565,10 @@ function partyBar() {
       return h('button', { class: `pmini ${c.dead ? 'dead' : ''}`, onclick: () => showParty(i) }, portraitOf(c, 2),
         h('div', { class: 'pmini-info' }, h('span', {}, c.name), h('div', { class: 'bar' }, h('i', { style: { width: `${ratio * 100}%`, background: ratio > 0.5 ? '#5ad85a' : ratio > 0.25 ? '#f2c84b' : '#ff4646' } })), h('small', {}, `${c.hp}/${maxHp(c)}`)));
     }),
+    autoPill(() => storyAutoHook?.()),
     h('button', { class: 'menu-btn', onclick: showMenu, 'aria-label': 'Menu' }, '☰'));
 }
+let storyAutoHook = null;
 
 export function enterNode(id, { resume = false } = {}) {
   if (id === '__title') { save(); showTitle(); return; }
@@ -462,13 +595,19 @@ function renderStory(node, notes = []) {
   const text = fillText(node.text, { who: G.state.lastWho || 'You' });
   const textEl = h('div', { class: 'story-text' });
   const choicesEl = h('div', { class: 'choices' });
+  const banterEl = h('div', { class: 'banter' });
   const npc = node.npc ? spriteCanvas(npcSprite(node.npc), 4, 'npc-portrait bob') : null;
   const screen = h('div', { class: 'screen story' },
     partyBar(),
     node.chapter ? h('div', { class: 'chapter' }, node.chapter) : null,
     h('div', { class: 'scene-wrap' }, sceneCanvas(node.scene || 'sandpoint'), npc),
-    h('div', { class: 'panel story-panel' }, textEl, notes.length ? h('div', { class: 'notes' }, notes.map((n) => h('div', {}, `✦ ${n}`))) : null, choicesEl));
+    h('div', { class: 'panel story-panel' }, textEl, notes.length ? h('div', { class: 'notes' }, notes.map((n) => h('div', {}, `✦ ${n}`))) : null, banterEl, choicesEl));
   setScreen(screen);
+  // Start fetching live AI banter right away so it's ready when the narration ends.
+  const situation = `${node.chapter ? `[${node.chapter}] ` : ''}${text}`.slice(0, 1400);
+  const aiLines = aiReady() && talkSettings.banter && !node.end ? aiSceneLines(G.state, situation, node.rest ? 4 : 3) : null;
+  const narration = speak(text, { kind: 'narrator' }, { queue: false });
+  const nodeId = G.state.node;
   const showChoices = () => {
     choicesEl.innerHTML = '';
     for (const ch of choicesFor(node)) {
@@ -479,10 +618,17 @@ function renderStory(node, notes = []) {
         const modTxt = pv && pv.mod !== null ? sign(pv.mod + bonus) : 'untrained';
         label.push(h('em', { class: 'check-tag' }, `[${checkLabel(ch.check)} · ${ch.check.who === 'party' ? (pv ? pv.c.name : 'party') : 'you'} ${modTxt}]`));
       }
-      choicesEl.append(h('button', { class: 'choice', onclick: () => { sfx('click'); choose(node, ch, choicesEl); } }, label));
+      choicesEl.append(h('button', { class: 'choice', onclick: () => { sfx('click'); storyAutoHook = null; choose(node, ch, choicesEl); } }, label));
     }
+    storyAutoHook = () => scheduleAutoChoice(node, choicesEl);
+    if (autoplay()) scheduleAutoChoice(node, choicesEl);
   };
-  typewrite(textEl, text, showChoices);
+  storyAutoHook = null;
+  typewrite(textEl, text, async () => {
+    if (voiceSettings.narrator) await narration;
+    await playBanter(node, nodeId, banterEl, aiLines);
+    if (textEl.isConnected) showChoices();
+  });
   keyHandler = (e) => {
     const list = [...choicesEl.querySelectorAll('.choice')];
     const i = digit(e);
@@ -493,6 +639,47 @@ function renderStory(node, notes = []) {
       else if (list.length === 1) list[0].click();
     }
   };
+}
+
+function scheduleAutoChoice(node, choicesEl) {
+  setTimeout(() => {
+    if (!autoplay() || !choicesEl.isConnected) return;
+    const btns = [...choicesEl.querySelectorAll('.choice')];
+    if (!btns.length) return;
+    if (node.end) { G.state.autoplay = false; save(); toast('The end! The AI hands control back to you.'); return; }
+    const ch = aiPick(node);
+    const idx = choicesFor(node).indexOf(ch);
+    const b = btns[idx] || btns[0];
+    b.classList.add('ai-pick');
+    setTimeout(() => { if (b.isConnected && autoplay()) b.click(); }, 900 / prefs.speed);
+  }, 1200 / prefs.speed);
+}
+
+// Show the party's conversation for this scene: speech bubbles + voices, one line at a time.
+async function playBanter(node, nodeId, el, aiLinesPromise) {
+  if (!talkSettings.banter) return;
+  G.state.flags.sceneSeen = G.state.flags.sceneSeen || [];
+  let lines = G.state.flags.sceneSeen.includes(nodeId) ? [] : sceneLines(nodeId, G.state);
+  if (aiLinesPromise) {
+    const ai = await Promise.race([aiLinesPromise, sleep(8000).then(() => null)]);
+    if (ai && ai.length) lines = ai;
+  }
+  if (node.rest) lines = [...lines, ...campLines(G.state)];
+  if (!G.state.flags.sceneSeen.includes(nodeId)) G.state.flags.sceneSeen.push(nodeId);
+  save();
+  if (!lines.length || !el.isConnected) return;
+  let skip = false;
+  const skipBtn = h('button', { class: 'skip-banter', onclick: () => { skip = true; stopVoices(); } }, 'Skip ▸▸');
+  el.append(skipBtn);
+  for (const l of lines) {
+    if (!el.isConnected) return;
+    const row = h('div', { class: `say ${l.c.isPlayer ? 'hero' : ''}` }, portraitOf(l.c, 2), h('div', { class: 'say-body' }, h('b', {}, l.c.name), h('span', {}, l.text)));
+    el.insertBefore(row, skipBtn);
+    if (skip) continue;
+    const minTime = (voiceSettings.enabled ? 700 : 1100) + l.text.length * (voiceSettings.enabled ? 20 : 32);
+    await Promise.all([speak(l.text, speakerOf(l.c)), sleep(minTime / Math.sqrt(prefs.speed))]);
+  }
+  skipBtn.remove();
 }
 
 function typewrite(el, text, done) {
@@ -535,7 +722,10 @@ function choose(node, ch, choicesEl) {
       const detail = r.untrained ? 'Untrained: automatic failure.' : `${r.roll} ${sign(r.mod)}${r.bonus ? ` ${sign(r.bonus)} (bonus)` : ''} = ${r.total} vs DC ${r.dc}`;
       result.querySelector('.check-text').innerHTML = '';
       result.querySelector('.check-text').append(h('b', { class: r.success ? 'good' : 'bad' }, r.success ? (r.roll === 20 ? 'Natural 20! Success!' : 'Success!') : 'Failure.'), h('div', { class: 'small' }, detail));
-      choicesEl.append(h('button', { class: 'choice primary', onclick: () => { sfx('click'); enterNode(r.success ? ch.pass : ch.fail); } }, 'Continue'));
+      const cont = h('button', { class: 'choice primary', onclick: () => { sfx('click'); enterNode(r.success ? ch.pass : ch.fail); } }, 'Continue');
+      choicesEl.append(cont);
+      if (r.who) speak(r.success ? (r.roll === 20 ? 'Natural twenty!' : 'Success!') : 'Failure.', { kind: 'narrator' });
+      if (autoplay()) setTimeout(() => { if (cont.isConnected && autoplay()) cont.click(); }, 1600 / prefs.speed);
     }
   }, 60);
 }
@@ -547,6 +737,19 @@ function levelUpFlow(targetLevel, done) {
   const need = featsGainedAt(p, L);
   const chosen = [];
   let inc = L === 4 ? FLEX_BEST[p.cls] : null;
+  if (autoplay()) {
+    levelUp(p, { feats: autoFeats(p, L, need), increase: inc });
+    for (const c of companions()) {
+      if (c.level >= L) continue;
+      const t = COMPANIONS[c.role];
+      levelUp(c, { feats: (t?.levelFeats[L] || []).filter((f) => !c.feats.includes(f)), increase: L === 4 ? t?.increase : null });
+    }
+    sfx('level');
+    toast(`⭐ The party reached level ${L}!`);
+    save();
+    if (p.level < Math.min(targetLevel, MAX_LEVEL)) levelUpFlow(targetLevel, done); else done();
+    return;
+  }
   const before = derive(p);
   const body = h('div', {});
   const render = () => {
@@ -625,7 +828,7 @@ class CombatUI {
     this.order = h('div', { class: 'order' });
     this.hint = h('div', { class: 'hint-bar' }, '');
     setScreen(h('div', { class: 'screen combat' },
-      h('div', { class: 'combat-top' }, h('div', { class: 'combat-title' }, this.enc.title), h('button', { class: 'menu-btn', onclick: () => this.showCombatMenu(), 'aria-label': 'Menu' }, '☰')),
+      h('div', { class: 'combat-top' }, h('div', { class: 'combat-title' }, this.enc.title), autoPill(() => this.onAutoplayToggle(), false), h('button', { class: 'menu-btn', onclick: () => this.showCombatMenu(), 'aria-label': 'Menu' }, '☰')),
       this.order, h('div', { class: 'field-wrap' }, this.canvas), this.hint, this.info, this.logEl, this.actions));
     this.view = new CombatView(this.canvas, engine);
     const wrap = this.canvas.parentElement;
@@ -639,6 +842,7 @@ class CombatUI {
     if (typeof ResizeObserver !== 'undefined') new ResizeObserver(fit).observe(wrap);
     fit();
     this.view.speed = prefs.speed;
+    this.barker = new Barker({ view: this.view, speed: prefs.speed, state: G.state, onLine: (name, text) => this.addLog(`${name}: "${text}"`, 'say') });
     engine.fx = this.wrapFx(this.view.fx);
     this.view.onCell = (x, y) => this.tap(x, y);
     this.view.onLog = (t, cls) => this.addLog(t, cls);
@@ -649,7 +853,17 @@ class CombatUI {
 
   wrapFx(fx) {
     const self = this;
-    return { ...fx, update() { self.renderOrder(); if (!self.mode) self.renderInfo(); }, async turnStart(u) { self.renderOrder(); self.renderInfo(u); await fx.turnStart(u); } };
+    return {
+      ...fx,
+      update() { self.renderOrder(); if (!self.mode) self.renderInfo(); },
+      async turnStart(u) { self.renderOrder(); self.renderInfo(u); if (!u.isPlayer) self.hint.textContent = ''; await fx.turnStart(u); },
+      event(type, data, e) { self.barker.handle(type, data, e); },
+    };
+  }
+
+  onAutoplayToggle() {
+    // Turning the AI on mid-turn hands the current turn over immediately.
+    if (autoplay() && this.resolveTurn && !this.busy) this.act(() => aiTurn(this.e, this.unit));
   }
 
   addLog(text, cls) {
@@ -700,6 +914,7 @@ class CombatUI {
 
   // -------------------------------------------------- player turn
   playerTurn(e, u) {
+    if (autoplay()) { this.hint.textContent = `🤖 ${u.name} is acting on their own...`; return aiTurn(e, u); }
     return new Promise((resolve) => {
       this.resolveTurn = resolve;
       this.unit = u;
@@ -932,9 +1147,10 @@ class CombatUI {
       G.state.checkpoint = null; G.state.checkpointNode = null;
       save();
       setTimeout(() => {
-        modal('Victory!', h('div', { class: 'center' }, h('div', { class: 'big gold' }, '★ Victory! ★'), h('p', {}, `The ${this.enc.title.toLowerCase()} is won.`),
+        const m = modal('Victory!', h('div', { class: 'center' }, h('div', { class: 'big gold' }, '★ Victory! ★'), h('p', {}, `The ${this.enc.title.toLowerCase()} is won.`),
           h('div', { class: 'victory-party' }, G.state.party.map((c) => h('div', {}, portraitOf(c, 3), h('small', {}, `${c.hp}/${maxHp(c)}`))))),
         [{ label: 'Continue', cls: 'primary', onClick: () => { this.view.destroy(); G.state.nodeApplied = false; enterNode(this.node.win); } }], { onClose: false });
+        if (autoplay()) setTimeout(() => { if (m.el.isConnected && autoplay()) m.el.querySelector('.btn.primary')?.click(); }, 2400 / prefs.speed);
       }, 500);
     } else this.defeat(false);
   }
@@ -942,10 +1158,12 @@ class CombatUI {
   defeat(playerDied) {
     sfx('lose');
     stopMusic();
+    const retry = () => { const ap = G.state.autoplay; this.view.destroy(); restore(G.state.checkpoint); G.state.autoplay = ap; save(); startCombat(G.state.node); };
     setTimeout(() => {
-      modal(playerDied ? 'You have fallen' : 'Defeat', h('div', { class: 'center' }, h('p', {}, playerDied ? 'Your companions win the day, but you do not live to see it.' : 'The party falls. Darkness closes in...'), h('p', { class: 'small dim' }, 'Try again: the battle restarts with your party as it was before the fight.')),
-        [{ label: 'Retry Battle', cls: 'primary', onClick: () => { this.view.destroy(); restore(G.state.checkpoint); save(); startCombat(G.state.node); } },
+      const m = modal(playerDied ? 'You have fallen' : 'Defeat', h('div', { class: 'center' }, h('p', {}, playerDied ? 'Your companions win the day, but you do not live to see it.' : 'The party falls. Darkness closes in...'), h('p', { class: 'small dim' }, 'Try again: the battle restarts with your party as it was before the fight.')),
+        [{ label: 'Retry Battle', cls: 'primary', onClick: retry },
           { label: 'Title', onClick: () => { this.view.destroy(); restore(G.state.checkpoint); save(); showTitle(); } }], { onClose: false });
+      if (autoplay()) setTimeout(() => { if (m.el.isConnected && autoplay()) { m.close(); retry(); } }, 2600 / prefs.speed);
     }, 700);
   }
 }

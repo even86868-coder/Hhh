@@ -83,6 +83,8 @@ export class Combat {
 
   // ---------------------------------------------------------------- utils
   log(text, cls = '') { this.logLines.push({ text, cls }); this.fx.log(text, cls); }
+  // Narrative hooks for dialogue/barks (optional in fx).
+  event(type, data = {}) { try { this.fx.event?.(type, data, this); } catch (e) { /* cosmetic only */ } }
   float(u, text, color) { this.fx.float(u, text, color); }
   tile(x, y) { return this.map.tiles[y]?.[x] ?? '#'; }
   inBounds(x, y) { return x >= 0 && y >= 0 && x < this.map.w && y < this.map.h; }
@@ -267,6 +269,7 @@ export class Combat {
   async run() {
     this.fx.update();
     this.rollInitiative();
+    this.event('start');
     if (this.surprise) {
       this.round = 0;
       await this.fx.banner(this.surprise === 'party' ? 'Surprise round!' : 'Ambush!');
@@ -287,6 +290,7 @@ export class Combat {
       if (this.round > 60) break;
     }
     const res = this.result() || 'defeat';
+    this.event('end', { res });
     this.finish(res);
     return res;
   }
@@ -385,11 +389,14 @@ export class Combat {
       if (amt === 0) { this.log(`${t.name}'s damage reduction absorbs the blow!`, 'sys'); this.float(t, 'DR', '#ccc'); return 0; }
     }
     if (t.tempHp > 0) { const ab = Math.min(t.tempHp, amt); t.tempHp -= ab; amt -= ab; }
+    const wasOut = t.out();
     t.hp -= amt;
     if (!bleed) this.float(t, `-${amount}`, '#ff5050');
     if (t.st.asleep) { delete t.st.asleep; this.log(`${t.name} wakes up!`); }
     if (note) this.log(`${t.name} takes ${amt} ${note} damage.`);
     this.checkDown(t);
+    if (!wasOut && t.out()) this.event('down', { t, src });
+    else if (t.side === 'party' && !t.lowHpNoted && t.hp > 0 && t.hp <= t.maxHp * 0.3) { t.lowHpNoted = true; this.event('lowHp', { t }); }
     this.fx.update();
     return amt;
   }
@@ -421,6 +428,8 @@ export class Combat {
     t.hp = Math.min(t.maxHp, t.hp + amount);
     if (t.hp >= 0) { t.stable = false; if (t.ferocious && t.hp >= 0) t.ferocious = false; }
     if (!quiet) this.log(`${t.name} heals ${t.hp - before} HP${before < 0 && t.hp >= 0 ? ' and is back on their feet' : ''}.`, 'heal');
+    if (t.hp > t.maxHp * 0.3) t.lowHpNoted = false;
+    if (src && !quiet) this.event(before < 0 && t.hp >= 0 ? 'revived' : 'healed', { t, src });
     this.float(t, `+${t.hp - before}`, '#7dff8a');
     this.fx.update();
   }
@@ -531,6 +540,7 @@ export class Combat {
     let dmg = 0;
     if (!hit) {
       line += concealMiss ? ' — misses (blinded)!' : r === 1 ? ' — fumble!' : ' — miss.';
+      this.event(r === 1 ? 'fumble' : 'miss', { att, tgt });
       this.log(line, 'miss');
       await this.fx.attack(att, tgt, { ranged, hit: false, icon: prof.icon });
       this.float(tgt, 'miss', '#ddd');
@@ -550,7 +560,7 @@ export class Combat {
     line += crit ? ` — CRITICAL HIT! ${dmg} dmg` : ` — hit, ${dmg} dmg`;
     this.log(line, crit ? 'crit' : 'hit');
     await this.fx.attack(att, tgt, { ranged, hit: true, crit, icon: prof.icon });
-    if (crit) this.float(tgt, 'CRIT!', '#ffd84a');
+    if (crit) { this.float(tgt, 'CRIT!', '#ffd84a'); this.event('crit', { att, tgt }); }
     await this.dealDamage(tgt, dmg, { src: att, weapon: true });
     if (prof.effect && !tgt.out()) await this.onHitEffect(att, tgt, prof.effect);
     return { hit: true, crit, dmg };
@@ -829,6 +839,7 @@ export class Combat {
     if (u.c) { if (known.level > 0) { u.c.used.slots = u.c.used.slots || {}; u.c.used.slots[known.level] = (u.c.used.slots[known.level] || 0) + 1; } }
     else u.uses.spells[key] -= 1;
     this.log(`${u.name} casts ${sp.name}!`, 'spell');
+    this.event('spell', { u, key, sp });
     if (this.isThreatened(u)) {
       const s = u.stats();
       const dc = 15 + 2 * known.level;
