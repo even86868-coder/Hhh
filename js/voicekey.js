@@ -26,6 +26,7 @@ export function packVoice(speaker) {
   if (speaker.kind === 'companion') return speaker.name;
   if (speaker.kind === 'hero') return HERO_PACK[speaker.preset] || 'hero_b';
   if (speaker.kind === 'monster') return MONSTER_PACK[speaker.monsterKey] || 'thug';
+  if (speaker.kind === 'npc') return speaker.voice || 'townsman';
   return 'gm'; // gm + narrator
 }
 

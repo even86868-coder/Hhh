@@ -12,6 +12,7 @@ import { CombatView } from './render.js';
 import { SPELLS } from './spells.js';
 import { sfx, playMusic, stopMusic, settings as audioSettings, unlockAudio } from './audio.js';
 import { PERSONALITIES, DEFAULT_PERSONALITY } from './dialogue.js';
+import { defaultSpeaker } from './speakers.js';
 import { speak, stopVoices, voiceSettings, voiceContext, VOICE_PRESETS, voiceAvailable, castList, setCast, listVoices, voicePackSize } from './voice.js';
 import { gmSettings, sceneIntro, stageDirection, explainCheck, explainResult, GMCommentator } from './gm.js';
 import { aiSettings, AI_MODELS, getApiKey, setApiKey, testConnection, aiReady } from './aibanter.js';
@@ -80,6 +81,7 @@ function sceneCanvas(key) {
 let lastScreen = null;
 function setScreen(...kids) {
   voiceContext.playerName = G.state?.party?.[0]?.name || '';
+  voiceContext.heroPreset = G.state?.party?.[0]?.appearance?.voice || 'warm';
   const a = app();
   const key = kids[0]?.className || '';
   const same = key === lastScreen;
@@ -638,7 +640,7 @@ function renderStory(node, notes = []) {
   // Start fetching live AI banter right away so it's ready when the narration ends.
   const situation = `${node.chapter ? `[${node.chapter}] ` : ''}${text}`.slice(0, 1400);
   const aiLines = aiReady() && talkSettings.banter && !node.end ? aiSceneLines(G.state, situation, node.rest ? 4 : 3) : null;
-  const narration = speak(text, { kind: 'narrator' }, { queue: false });
+  const narration = speak(text, { kind: 'narrator', fallback: defaultSpeaker(G.state.node, node) }, { queue: false });
   const nodeId = G.state.node;
   const showChoices = () => {
     choicesEl.innerHTML = '';

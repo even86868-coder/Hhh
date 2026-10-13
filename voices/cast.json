@@ -679,6 +679,356 @@
       "openai": "verse",
       "direction": "A rough street thug. Threatening, swaggering.",
       "elevenlabsName": "Roger - Laid-Back, Casual, Resonant"
+    },
+    "ameiko": {
+      "elevenlabs": "",
+      "want": {
+        "gender": "female",
+        "age": [
+          "young",
+          "middle aged"
+        ],
+        "keywords": [
+          "confident",
+          "warm",
+          "witty",
+          "bright",
+          "strong"
+        ],
+        "names": [
+          "Charlotte",
+          "Lily",
+          "Alice"
+        ],
+        "avoid": [
+          "seductive",
+          "child"
+        ]
+      },
+      "settings": {
+        "stability": 0.45,
+        "similarity_boost": 0.75,
+        "style": 0.35
+      },
+      "openai": "nova",
+      "direction": "Ameiko Kaijitsu: sharp-witted innkeeper and retired adventurer. Warm, dry, confident."
+    },
+    "zantus": {
+      "elevenlabs": "",
+      "want": {
+        "gender": "male",
+        "age": [
+          "middle aged",
+          "old"
+        ],
+        "keywords": [
+          "kind",
+          "gentle",
+          "warm",
+          "calm",
+          "wise"
+        ],
+        "names": [
+          "Bill",
+          "George",
+          "Brian"
+        ],
+        "avoid": [
+          "young",
+          "aggressive"
+        ]
+      },
+      "settings": {
+        "stability": 0.45,
+        "similarity_boost": 0.75,
+        "style": 0.35
+      },
+      "openai": "ash",
+      "direction": "Father Zantus: a kind, gentle priest of the Dawnflower. Calm and caring."
+    },
+    "hemlock": {
+      "elevenlabs": "",
+      "want": {
+        "gender": "male",
+        "age": [
+          "middle aged"
+        ],
+        "keywords": [
+          "gruff",
+          "deep",
+          "serious",
+          "authoritative",
+          "calm"
+        ],
+        "names": [
+          "Clyde",
+          "Brian",
+          "Bill"
+        ],
+        "avoid": [
+          "young",
+          "cheerful"
+        ]
+      },
+      "settings": {
+        "stability": 0.45,
+        "similarity_boost": 0.75,
+        "style": 0.35
+      },
+      "openai": "onyx",
+      "direction": "Sheriff Hemlock: stern, weary, fair. Few words, gravel voice."
+    },
+    "aldern": {
+      "elevenlabs": "",
+      "want": {
+        "gender": "male",
+        "age": [
+          "young"
+        ],
+        "keywords": [
+          "posh",
+          "british",
+          "refined",
+          "eager",
+          "smooth"
+        ],
+        "names": [
+          "Daniel",
+          "Eric",
+          "Callum"
+        ],
+        "avoid": [
+          "deep",
+          "old"
+        ]
+      },
+      "settings": {
+        "stability": 0.45,
+        "similarity_boost": 0.75,
+        "style": 0.35
+      },
+      "openai": "fable",
+      "direction": "Aldern Foxglove: a breathless, flattering young nobleman, a little too eager."
+    },
+    "shalelu": {
+      "elevenlabs": "",
+      "want": {
+        "gender": "female",
+        "age": [
+          "young",
+          "middle aged"
+        ],
+        "keywords": [
+          "calm",
+          "cool",
+          "confident",
+          "clear"
+        ],
+        "names": [
+          "Alice",
+          "Matilda",
+          "Sarah"
+        ],
+        "avoid": [
+          "seductive",
+          "cute"
+        ]
+      },
+      "settings": {
+        "stability": 0.45,
+        "similarity_boost": 0.75,
+        "style": 0.35
+      },
+      "openai": "shimmer",
+      "direction": "Shalelu: a cool, terse elven ranger who has seen too much."
+    },
+    "mirela": {
+      "elevenlabs": "",
+      "want": {
+        "gender": "female",
+        "age": [
+          "middle aged",
+          "young"
+        ],
+        "keywords": [
+          "sly",
+          "smooth",
+          "confident",
+          "sultry",
+          "mysterious"
+        ],
+        "names": [
+          "Laura",
+          "Charlotte",
+          "Lily"
+        ],
+        "avoid": [
+          "child",
+          "cheerful"
+        ]
+      },
+      "settings": {
+        "stability": 0.45,
+        "similarity_boost": 0.75,
+        "style": 0.35
+      },
+      "openai": "shimmer",
+      "direction": "Mirela: a silky, dangerous Sczarni boss who calls Pip little rat."
+    },
+    "granny": {
+      "elevenlabs": "",
+      "want": {
+        "gender": "female",
+        "age": [
+          "old"
+        ],
+        "keywords": [
+          "old",
+          "raspy",
+          "warm",
+          "grandmother"
+        ],
+        "names": [
+          "Matilda",
+          "Alice",
+          "Sarah"
+        ],
+        "avoid": [
+          "young",
+          "seductive"
+        ]
+      },
+      "settings": {
+        "stability": 0.45,
+        "similarity_boost": 0.75,
+        "style": 0.35
+      },
+      "openai": "sage",
+      "direction": "An old woman of the coast: raspy, blunt, warm underneath."
+    },
+    "oldman": {
+      "elevenlabs": "",
+      "want": {
+        "gender": "male",
+        "age": [
+          "old"
+        ],
+        "keywords": [
+          "old",
+          "raspy",
+          "wise",
+          "gravelly",
+          "tired"
+        ],
+        "names": [
+          "Bill",
+          "George",
+          "Brian"
+        ],
+        "avoid": [
+          "young"
+        ]
+      },
+      "settings": {
+        "stability": 0.45,
+        "similarity_boost": 0.75,
+        "style": 0.35
+      },
+      "openai": "ash",
+      "direction": "An old man: a scholar, fisherman or broken veteran. Shaky and heartfelt."
+    },
+    "townsman": {
+      "elevenlabs": "",
+      "want": {
+        "gender": "male",
+        "age": [
+          "young",
+          "middle aged"
+        ],
+        "keywords": [
+          "casual",
+          "friendly",
+          "everyday"
+        ],
+        "names": [
+          "Will",
+          "Chris",
+          "Eric"
+        ],
+        "avoid": [
+          "deep",
+          "old"
+        ]
+      },
+      "settings": {
+        "stability": 0.45,
+        "similarity_boost": 0.75,
+        "style": 0.35
+      },
+      "openai": "echo",
+      "direction": "A Sandpoint townsman: a nervous deputy, a recruit, a barkeep."
+    },
+    "woman": {
+      "elevenlabs": "",
+      "want": {
+        "gender": "female",
+        "age": [
+          "middle aged"
+        ],
+        "keywords": [
+          "confident",
+          "strong",
+          "clear",
+          "professional"
+        ],
+        "names": [
+          "Sarah",
+          "Alice",
+          "Matilda"
+        ],
+        "avoid": [
+          "seductive",
+          "child"
+        ]
+      },
+      "settings": {
+        "stability": 0.45,
+        "similarity_boost": 0.75,
+        "style": 0.35
+      },
+      "openai": "coral",
+      "direction": "A Sandpoint townswoman: a no-nonsense militia sergeant."
+    },
+    "child": {
+      "elevenlabs": "",
+      "want": {
+        "gender": "female",
+        "age": [
+          "young"
+        ],
+        "keywords": [
+          "young",
+          "child",
+          "cute",
+          "soft",
+          "sweet"
+        ],
+        "names": [
+          "Jessica",
+          "Lily"
+        ],
+        "avoid": [
+          "seductive",
+          "old"
+        ]
+      },
+      "settings": {
+        "stability": 0.45,
+        "similarity_boost": 0.75,
+        "style": 0.35
+      },
+      "openai": "coral",
+      "direction": "Wren: a small sick orphan girl, quiet and hopeful."
     }
   }
 }

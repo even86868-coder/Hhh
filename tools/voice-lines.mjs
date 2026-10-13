@@ -5,6 +5,7 @@ import { BARKS, MONSTER_BARKS, SCENES, CAMP, fill } from '../js/dialogue.js';
 import { ALL_GM_LINES } from '../js/gm.js';
 import { STORY } from '../js/story.js';
 import { lineKey, normalizeLine, MONSTER_PACK, NAME_TOKEN, spokenForm, paragraphs, sentences } from '../js/voicekey.js';
+import { splitDialogue, defaultSpeaker, NPC_VOICES } from '../js/speakers.js';
 
 const COMPANION_BY_ROLE = { tank: 'Brannoc', healer: 'Tamsin', arcane: 'Quillan', skirm: 'Pip' };
 const COMPANIONS = Object.values(COMPANION_BY_ROLE);
@@ -63,6 +64,18 @@ export function collectLines({ heroVoices = HERO_VOICES } = {}) {
       else for (const s of sentences(p)) add('gm', s, source);
     }
   };
+  // Quoted lines are spoken by the character who says them (see js/speakers.js), the rest by the narrator.
+  const STAND_IN = 'Zorvath'; // a name-shaped stand-in for the player while finding speakers
+  const voicesFor = (who) => (who === 'hero' ? heroVoices : COMPANIONS.includes(who) ? [who] : [NPC_VOICES[who] || 'townsman']);
+  const addStory = (t, id, node) => {
+    const segs = splitDialogue(t.replaceAll(PLAYER, STAND_IN), { playerName: STAND_IN, fallback: defaultSpeaker(id, node) })
+      .map((s) => ({ ...s, text: s.text.replaceAll(STAND_IN, PLAYER) }));
+    if (!segs.some((s) => s.who)) { addNarration(t, `story:${id}`); return; }
+    for (const s of segs) {
+      if (!s.who) addNarration(s.text, `story:${id}`);
+      else for (const v of voicesFor(s.who)) add(v, s.text, `quote:${id}`);
+    }
+  };
   for (const [id, node] of Object.entries(STORY)) {
     if (node.combat || !node.text) continue;
     const texts = new Set();
@@ -74,7 +87,7 @@ export function collectLines({ heroVoices = HERO_VOICES } = {}) {
         const names = { ...COMPANION_BY_ROLE, [playerRole]: PLAYER, name: PLAYER, who };
         for (const t of texts) {
           if (who !== 'You' && !t.includes('{who}')) continue;
-          addNarration(t.replace(/\{(\w+)\}/g, (m, k) => names[k] ?? m), `story:${id}`);
+          addStory(t.replace(/\{(\w+)\}/g, (m, k) => names[k] ?? m), id, node);
         }
       }
     }
