@@ -203,6 +203,15 @@ const MON = {
       '...DD.DD..DD.DD.', '...DD.DD..DD.DD.', '...dd.dd..dd.dd.', '................',
     ],
   },
+  reefclaw: {
+    pal: { C: '#d8603a', c: '#9a3a24', Y: '#ffe040', k: '#1a0a0a', W: '#ffd0b0' },
+    rows: [
+      '................', '................', '................', '................',
+      '................', '..cC........Cc..', '..CCc......cCC..', '...cC.YkkY.Cc...',
+      '....cCCCCCCc....', '...CCCWCCWCCC...', '..cCCCCCCCCCCc..', '...cCCCCCCCCc...',
+      '...c.c.c..c.c.c.', '..c..c.c..c.c..c', '................', '................',
+    ],
+  },
   ripnugget: {
     pal: { G: '#7cc04a', g: '#4f8a2f', R: '#e8303a', W: '#fff4d0', k: '#3a1a1a', P: '#d89a8a', p: '#a86a62', C: '#f2c84b', a: '#b8c0d0', X: '#e8eef8' },
     rows: [
@@ -223,6 +232,9 @@ const NPC_LOOKS = {
   ameiko: { name: 'Ameiko', race: 'human', cls: 'rogue', appearance: { skin: 1, hair: 0, hairStyle: 1, outfit: 1 }, weapon: 'none' },
   hemlock: { name: 'Hemlock', race: 'human', cls: 'fighter', appearance: { skin: 3, hair: 0, hairStyle: 5, outfit: 6, beard: true }, weapon: 'longsword', shield: true },
   zantus: { name: 'Zantus', race: 'human', cls: 'cleric', appearance: { skin: 0, hair: 1, hairStyle: 0, outfit: 0 }, weapon: 'none' },
+  thug: { name: 'Thug', race: 'human', cls: 'barbarian', appearance: { skin: 2, hair: 0, hairStyle: 5, outfit: 6, beard: true }, weapon: 'mace' },
+  enforcer: { name: 'Enforcer', race: 'human', cls: 'rogue', appearance: { skin: 1, hair: 0, hairStyle: 4, outfit: 1 }, weapon: 'dagger' },
+  gm: { name: 'Game Master', race: 'human', cls: 'wizard', appearance: { skin: 2, hair: 4, hairStyle: 5, outfit: 6, beard: true }, weapon: 'staff' },
   shalelu: { name: 'Shalelu', race: 'elf', cls: 'ranger', appearance: { skin: 0, hair: 4, hairStyle: 4, outfit: 2 }, weapon: 'longbow' },
 };
 

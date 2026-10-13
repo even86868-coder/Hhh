@@ -1,3 +1,4 @@
+[hidden] { display: none !important; }
 :root {
   --bg: #1a1030;
   --bg2: #24163f;
@@ -260,3 +261,32 @@ kbd { display: none; }
   .ord .portrait { width: 40px; height: 40px; }
   .spell-list { max-height: 50vh; }
 }
+
+/* ---------- dialogue, voices, watch mode ---------- */
+.banter { display: flex; flex-direction: column; gap: 6px; margin: 4px 0 10px; }
+.banter:empty { display: none; }
+.say { display: flex; gap: 6px; align-items: flex-start; animation: fadein 0.25s ease; }
+.say .portrait { width: 36px; height: 36px; flex-shrink: 0; background: var(--bg2); border: 2px solid var(--ink); border-radius: 4px; }
+.say-body { position: relative; background: #fffaf0; color: #2a1c3a; border: 2px solid var(--ink); border-radius: 6px; padding: 6px 9px; font-size: 15px; line-height: 1.35; box-shadow: 0 2px 0 var(--ink); }
+.say-body b { display: block; font-family: var(--pixel); font-size: 8px; color: #8a3a6a; margin-bottom: 3px; }
+.say.hero { flex-direction: row-reverse; }
+.say.hero .say-body { background: #e8f2ff; }
+.say.hero .say-body b { color: #2a5aa8; text-align: right; }
+.skip-banter { align-self: flex-end; background: none; border: none; color: var(--dim); font-family: var(--pixel); font-size: 8px; cursor: pointer; padding: 4px; }
+.autopill { flex-shrink: 0; background: var(--panel2); border: 2px solid var(--ink); border-radius: 14px; padding: 0 6px; font-size: 15px; cursor: pointer; min-width: 36px; color: var(--text); }
+.autopill.on { background: #2a8a5a; box-shadow: inset 0 0 0 2px #7dffb0; font-family: var(--pixel); font-size: 9px; animation: pulse 1.6s ease-in-out infinite; }
+.combat-top .autopill { height: 34px; }
+@keyframes pulse { 50% { filter: brightness(1.25); } }
+.choice.ai-pick { outline: 3px solid #7dffb0; outline-offset: 2px; background: #2a5a4a; }
+.ll.c-say { color: #ffe9b0; font-style: italic; }
+
+/* ---------- Game Master ---------- */
+.say.gm .say-body { background: transparent; color: var(--gold); border: 2px dashed var(--line-dim); box-shadow: none; font-style: italic; }
+.say.gm .portrait { background: #3a2860; }
+.gm-outcome { color: var(--gold); margin-top: 4px; font-style: italic; }
+.field-wrap { position: relative; }
+.gm-box { position: absolute; top: 6px; left: 6px; right: 6px; z-index: 3; display: flex; gap: 8px; align-items: center; background: rgba(27, 20, 36, 0.92); border: 2px solid var(--gold); border-radius: 6px; padding: 6px 10px 6px 4px; color: #ffeec0; font-size: 14px; line-height: 1.35; animation: fadein 0.25s ease; }
+.gm-box .portrait { width: 36px; height: 36px; flex-shrink: 0; }
+.ll.c-gm { color: var(--gold); }
+.cast-row { display: grid; grid-template-columns: 90px minmax(0, 1fr) auto; gap: 8px; align-items: center; margin: 8px 0; }
+.cast-row select { font-size: 14px; min-width: 0; }

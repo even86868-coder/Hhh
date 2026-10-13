@@ -26,6 +26,7 @@ export class CombatView {
     this.pos = new Map();
     for (const u of engine.units) this.pos.set(u.id, { x: u.x, y: u.y });
     this.floats = [];
+    this.bubbles = new Map();
     this.projectiles = [];
     this.flashes = new Map();
     this.lunges = new Map();
@@ -47,6 +48,50 @@ export class CombatView {
     const x = Math.floor(((ev.clientX - r.left) / r.width) * this.W / TS);
     const y = Math.floor(((ev.clientY - r.top) / r.height) * this.H / TS);
     if (this.onCell) this.onCell(x, y);
+  }
+
+  say(unit, text, ms = 2500) { this.bubbles.set(unit.id, { text, t0: performance.now(), ms }); }
+
+  drawBubbles(ctx, t) {
+    const pad = 3 * S, lineH = 7.5 * S, maxW = 70 * S;
+    ctx.font = `${6 * S}px "Pixelify Sans", sans-serif`;
+    ctx.textAlign = 'left';
+    for (const [id, b] of this.bubbles) {
+      if (t - b.t0 > b.ms) { this.bubbles.delete(id); continue; }
+      const u = this.e.units.find((x) => x.id === id);
+      const p = this.pos.get(id);
+      if (!u || !p || u.dead) continue;
+      // word wrap
+      const words = b.text.split(' ');
+      const lines = [];
+      let cur = '';
+      for (const w of words) {
+        const test = cur ? `${cur} ${w}` : w;
+        if (ctx.measureText(test).width > maxW && cur) { lines.push(cur); cur = w; } else cur = test;
+      }
+      if (cur) lines.push(cur);
+      const w = Math.min(maxW, Math.max(...lines.map((l) => ctx.measureText(l).width))) + pad * 2;
+      const h = lines.length * lineH + pad * 1.6;
+      const cx = (p.x * TS + 8) * S;
+      let x = Math.round(cx - w / 2);
+      x = Math.max(2 * S, Math.min(this.canvas.width - w - 2 * S, x));
+      let y = Math.round((p.y * TS - 5) * S - h);
+      const below = y < 2 * S;
+      if (below) y = Math.round((p.y * TS + 18) * S);
+      const fade = Math.min(1, (b.ms - (t - b.t0)) / 250, (t - b.t0) / 120);
+      ctx.globalAlpha = Math.max(0, fade);
+      ctx.fillStyle = '#1b1424';
+      ctx.fillRect(x - S, y - S, w + 2 * S, h + 2 * S);
+      ctx.fillStyle = u.side === 'party' ? '#fffaf0' : '#ffe8e8';
+      ctx.fillRect(x, y, w, h);
+      // tail
+      ctx.fillStyle = '#1b1424';
+      const tx = Math.max(x + 4 * S, Math.min(x + w - 6 * S, cx - 2 * S));
+      if (below) { ctx.fillRect(tx, y - 3 * S, 3 * S, 3 * S); } else { ctx.fillRect(tx, y + h, 3 * S, 3 * S); ctx.fillStyle = u.side === 'party' ? '#fffaf0' : '#ffe8e8'; ctx.fillRect(tx + S, y + h, S, 2 * S); }
+      ctx.fillStyle = '#2a1c3a';
+      lines.forEach((l, i) => ctx.fillText(l, x + pad, y + pad * 0.6 + (i + 0.8) * lineH));
+      ctx.globalAlpha = 1;
+    }
   }
 
   setHighlights(h) { this.hl = { cells: [], color: null, targets: [], area: [], areaColor: null, ...h }; }
@@ -188,6 +233,8 @@ export class CombatView {
       ctx.fillStyle = f.color || '#fff'; ctx.fillText(f.text, x, y);
       ctx.globalAlpha = 1;
     }
+    this.drawBubbles(ctx, t);
+    ctx.textAlign = 'center';
     if (this.bannerText) {
       const k = (t - this.bannerText.t0) / 650;
       ctx.globalAlpha = k < 0.15 ? k / 0.15 : k > 0.8 ? (1 - k) / 0.2 : 1;

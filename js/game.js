@@ -36,9 +36,9 @@ export function snapshot() { const { checkpoint, ...rest } = G.state; return JSO
 export function restore(json) { const cp = G.state.checkpoint; G.state = JSON.parse(json); G.state.checkpoint = cp; }
 
 // ------------------------------------------------------------------ text
+// The companion filling a role. If the player took that role, the player fills in.
 export function companionByRole(role) {
-  const comps = companions();
-  return comps.find((c) => c.role === role) || comps[ROLES.indexOf(role) % comps.length];
+  return companions().find((c) => c.role === role) || player();
 }
 export function fillText(text, extra = {}) {
   const s = G.state;

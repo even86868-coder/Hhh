@@ -1,0 +1,665 @@
+{
+  "_readme": "Voice casting for the recorded voice pack. For ElevenLabs, 'elevenlabs' can be a voice name from your ElevenLabs account (e.g. \"George\") or a voice ID; leave it empty and tools/cast-voices.mjs picks one using 'want'. 'settings' are ElevenLabs voice settings (lower stability = more expressive; 'style' is only sent to older models, Eleven v4 ignores it). 'direction' is used by OpenAI only. 'heroVoices' lists the hero voices to record: 2 halves the pack; the game shares recordings between similar hero voices. 'want.avoid' lists traits to steer away from when auto-casting. Story narration (lines from story scenes) uses elevenlabs.narrationModel; everything else uses elevenlabs.model. If your account rejects a model, elevenlabs.fallback names the one to use instead. elevenlabs.tags adds Eleven v4 audio tags (like [excited]) in front of lines, by line type ('source', e.g. bark:crit; a key ending in ':' matches every line of that kind) or by voice ('voice'); the tags only change how a line is performed, never its text in the game.",
+  "provider": "elevenlabs",
+  "heroVoices": [
+    "hero_a",
+    "hero_b"
+  ],
+  "elevenlabs": {
+    "model": "eleven_v4",
+    "narrationModel": "eleven_v4_turbo",
+    "format": "mp3_44100_64",
+    "creditsPerChar": {
+      "eleven_v4": 1,
+      "eleven_v4_turbo": 0.5,
+      "eleven_multilingual_v2": 1,
+      "eleven_flash_v2_5": 0.5
+    },
+    "fallback": {
+      "eleven_v4": "eleven_multilingual_v2",
+      "eleven_v4_turbo": "eleven_flash_v2_5"
+    },
+    "tags": {
+      "enabled": true,
+      "source": {
+        "bark:start": "[determined]",
+        "bark:crit": "[excited]",
+        "bark:allyCrit": "[impressed]",
+        "bark:kill": "[triumphant]",
+        "bark:allyDown": "[shouting]",
+        "bark:lowHp": "[strained]",
+        "bark:fumble": "[frustrated]",
+        "bark:healedBy": "[relieved]",
+        "bark:revived": "[gasps]",
+        "bark:victory": "[laughs]",
+        "gm:start": "[dramatic]",
+        "monster:goblin": "[cackling]",
+        "monster:goblinArcher": "[cackling]",
+        "monster:warchanter": "[sings]",
+        "monster:goblinDog": "[growls]",
+        "monster:boar": "[growls]",
+        "monster:yethHound": "[growls]",
+        "monster:sinspawn": "[growls]",
+        "monster:reefclaw": "[growls]",
+        "monster:erylium": "[giggles]",
+        "monster:ripnugget": "[shouting]",
+        "monster:nualia": "[menacing]"
+      },
+      "voice": {}
+    }
+  },
+  "openai": {
+    "model": "gpt-4o-mini-tts",
+    "format": "mp3"
+  },
+  "voices": {
+    "gm": {
+      "elevenlabs": "",
+      "want": {
+        "gender": "male",
+        "age": [
+          "middle aged",
+          "old"
+        ],
+        "keywords": [
+          "narrat",
+          "story",
+          "warm",
+          "deep",
+          "british",
+          "calm",
+          "wise"
+        ],
+        "names": [
+          "George",
+          "Daniel",
+          "Brian",
+          "Bill"
+        ],
+        "avoid": [
+          "seductive",
+          "social media",
+          "young"
+        ]
+      },
+      "settings": {
+        "stability": 0.6,
+        "similarity_boost": 0.8,
+        "style": 0.25
+      },
+      "openai": "fable",
+      "direction": "A warm, wise fantasy storyteller and game master. Unhurried, gently dramatic, a twinkle of humor."
+    },
+    "Brannoc": {
+      "elevenlabs": "",
+      "want": {
+        "gender": "male",
+        "age": [
+          "middle aged",
+          "old"
+        ],
+        "keywords": [
+          "gruff",
+          "deep",
+          "raspy",
+          "rough",
+          "gravel",
+          "strong",
+          "intense"
+        ],
+        "names": [
+          "Bill",
+          "Clyde",
+          "Arnold",
+          "Brian",
+          "Roger"
+        ],
+        "avoid": [
+          "young",
+          "soft",
+          "seductive"
+        ]
+      },
+      "settings": {
+        "stability": 0.55,
+        "similarity_boost": 0.8,
+        "style": 0.3
+      },
+      "openai": "onyx",
+      "direction": "A gruff, laconic veteran soldier. Low, gravelly, few words, dry humor, protective."
+    },
+    "Tamsin": {
+      "elevenlabs": "",
+      "want": {
+        "gender": "female",
+        "age": [
+          "young",
+          "middle aged"
+        ],
+        "keywords": [
+          "warm",
+          "kind",
+          "soft",
+          "friendly",
+          "gentle",
+          "pleasant"
+        ],
+        "names": [
+          "Matilda",
+          "Sarah",
+          "Lily",
+          "Alice",
+          "Laura"
+        ],
+        "avoid": [
+          "seductive"
+        ]
+      },
+      "settings": {
+        "stability": 0.5,
+        "similarity_boost": 0.8,
+        "style": 0.3
+      },
+      "openai": "coral",
+      "direction": "A warm, kind young priestess. Gentle but firm, scolds with affection, brave."
+    },
+    "Quillan": {
+      "elevenlabs": "",
+      "want": {
+        "gender": "male",
+        "age": [
+          "young",
+          "middle aged"
+        ],
+        "keywords": [
+          "british",
+          "excited",
+          "articulate",
+          "intelligent",
+          "energetic",
+          "nerd",
+          "fast"
+        ],
+        "names": [
+          "Callum",
+          "Daniel",
+          "Will",
+          "Liam",
+          "Eric"
+        ],
+        "avoid": [
+          "seductive",
+          "gravel"
+        ]
+      },
+      "settings": {
+        "stability": 0.4,
+        "similarity_boost": 0.8,
+        "style": 0.45
+      },
+      "openai": "ash",
+      "direction": "An excitable, talkative elven scholar. Quick, enthusiastic, loves big words."
+    },
+    "Pip": {
+      "elevenlabs": "",
+      "want": {
+        "gender": "male",
+        "age": [
+          "young"
+        ],
+        "keywords": [
+          "playful",
+          "cheeky",
+          "casual",
+          "energetic",
+          "friendly",
+          "upbeat",
+          "australian"
+        ],
+        "names": [
+          "Charlie",
+          "Will",
+          "Liam",
+          "Chris"
+        ],
+        "avoid": [
+          "seductive",
+          "news",
+          "deep"
+        ]
+      },
+      "settings": {
+        "stability": 0.35,
+        "similarity_boost": 0.75,
+        "style": 0.55
+      },
+      "openai": "nova",
+      "direction": "A cheeky, playful halfling thief. Bright, quick, mischievous, always joking."
+    },
+    "hero_a": {
+      "elevenlabs": "",
+      "want": {
+        "gender": "male",
+        "age": [
+          "young",
+          "middle aged"
+        ],
+        "keywords": [
+          "confident",
+          "strong",
+          "deep",
+          "heroic",
+          "warm"
+        ],
+        "names": [
+          "Chris",
+          "Eric",
+          "Liam",
+          "Brian"
+        ]
+      },
+      "settings": {
+        "stability": 0.5,
+        "similarity_boost": 0.8,
+        "style": 0.35
+      },
+      "openai": "verse",
+      "direction": "A brave adventurer with a deep, steady voice."
+    },
+    "hero_b": {
+      "elevenlabs": "",
+      "want": {
+        "gender": "female",
+        "age": [
+          "young",
+          "middle aged"
+        ],
+        "keywords": [
+          "confident",
+          "strong",
+          "warm",
+          "expressive",
+          "clear"
+        ],
+        "names": [
+          "Jessica",
+          "Laura",
+          "Aria",
+          "Charlotte",
+          "Sarah"
+        ]
+      },
+      "settings": {
+        "stability": 0.5,
+        "similarity_boost": 0.8,
+        "style": 0.35
+      },
+      "openai": "shimmer",
+      "direction": "A brave adventurer with a warm, confident voice."
+    },
+    "hero_c": {
+      "elevenlabs": "",
+      "want": {
+        "gender": "female",
+        "age": [
+          "young"
+        ],
+        "keywords": [
+          "bright",
+          "lively",
+          "upbeat",
+          "energetic",
+          "youthful"
+        ],
+        "names": [
+          "Lily",
+          "Jessica",
+          "Aria"
+        ]
+      },
+      "settings": {
+        "stability": 0.45,
+        "similarity_boost": 0.8,
+        "style": 0.4
+      },
+      "openai": "sage",
+      "direction": "A brave adventurer with a bright, lively voice."
+    },
+    "hero_d": {
+      "elevenlabs": "",
+      "want": {
+        "gender": "male",
+        "age": [
+          "young"
+        ],
+        "keywords": [
+          "young",
+          "eager",
+          "energetic",
+          "bright"
+        ],
+        "names": [
+          "Liam",
+          "Will",
+          "Charlie"
+        ]
+      },
+      "settings": {
+        "stability": 0.45,
+        "similarity_boost": 0.8,
+        "style": 0.4
+      },
+      "openai": "ballad",
+      "direction": "A brave young adventurer with a high, eager voice."
+    },
+    "goblin": {
+      "elevenlabs": "",
+      "want": {
+        "gender": "any",
+        "age": [
+          "young"
+        ],
+        "keywords": [
+          "goblin",
+          "creature",
+          "character",
+          "animated",
+          "cartoon",
+          "quirky",
+          "high",
+          "energetic",
+          "playful"
+        ],
+        "names": [
+          "Charlie",
+          "Will"
+        ],
+        "avoid": [
+          "seductive",
+          "calm",
+          "news",
+          "deep",
+          "soft"
+        ]
+      },
+      "settings": {
+        "stability": 0.25,
+        "similarity_boost": 0.6,
+        "style": 0.8
+      },
+      "openai": "echo",
+      "direction": "A silly, screechy, gleefully menacing little goblin. Fast, high, cackling, sing-song."
+    },
+    "ripnugget": {
+      "elevenlabs": "",
+      "want": {
+        "gender": "male",
+        "age": [
+          "any"
+        ],
+        "keywords": [
+          "character",
+          "animated",
+          "loud",
+          "boastful",
+          "quirky"
+        ],
+        "names": [
+          "Charlie",
+          "Roger"
+        ],
+        "avoid": [
+          "seductive",
+          "calm",
+          "soft"
+        ]
+      },
+      "settings": {
+        "stability": 0.3,
+        "similarity_boost": 0.6,
+        "style": 0.75
+      },
+      "openai": "echo",
+      "direction": "A pompous goblin chieftain, shrill and boastful, shouting."
+    },
+    "erylium": {
+      "elevenlabs": "",
+      "want": {
+        "gender": "female",
+        "age": [
+          "young"
+        ],
+        "keywords": [
+          "character",
+          "animated",
+          "playful",
+          "mischiev",
+          "quirky",
+          "high"
+        ],
+        "names": [
+          "Lily",
+          "Aria"
+        ],
+        "avoid": [
+          "seductive",
+          "calm",
+          "news"
+        ]
+      },
+      "settings": {
+        "stability": 0.25,
+        "similarity_boost": 0.6,
+        "style": 0.8
+      },
+      "openai": "ballad",
+      "direction": "A tiny, giggling, wicked imp demon. Hissing, high, gleeful."
+    },
+    "beast": {
+      "elevenlabs": "",
+      "want": {
+        "gender": "male",
+        "age": [
+          "old",
+          "middle aged"
+        ],
+        "keywords": [
+          "deep",
+          "raspy",
+          "gravel",
+          "monster",
+          "intense",
+          "dark"
+        ],
+        "names": [
+          "Bill",
+          "Clyde",
+          "Arnold"
+        ],
+        "avoid": [
+          "soft",
+          "calm",
+          "young"
+        ]
+      },
+      "settings": {
+        "stability": 0.3,
+        "similarity_boost": 0.6,
+        "style": 0.7
+      },
+      "openai": "onyx",
+      "direction": "A snarling monster. Growl and hiss the words."
+    },
+    "tsuto": {
+      "elevenlabs": "",
+      "want": {
+        "gender": "male",
+        "age": [
+          "young"
+        ],
+        "keywords": [
+          "cold",
+          "arrogant",
+          "intense",
+          "articulate",
+          "smooth"
+        ],
+        "names": [
+          "Daniel",
+          "Callum",
+          "Eric"
+        ]
+      },
+      "settings": {
+        "stability": 0.45,
+        "similarity_boost": 0.8,
+        "style": 0.5
+      },
+      "openai": "ash",
+      "direction": "A bitter, arrogant young man. Cold, sneering, wounded pride."
+    },
+    "bruthazmus": {
+      "elevenlabs": "",
+      "want": {
+        "gender": "male",
+        "age": [
+          "middle aged",
+          "old"
+        ],
+        "keywords": [
+          "deep",
+          "gravel",
+          "intense",
+          "menac",
+          "strong"
+        ],
+        "names": [
+          "Clyde",
+          "Arnold",
+          "Bill"
+        ]
+      },
+      "settings": {
+        "stability": 0.35,
+        "similarity_boost": 0.7,
+        "style": 0.6
+      },
+      "openai": "onyx",
+      "direction": "A hulking, mocking bugbear hunter. Deep, slow, menacing laughter."
+    },
+    "orik": {
+      "elevenlabs": "",
+      "want": {
+        "gender": "male",
+        "age": [
+          "middle aged"
+        ],
+        "keywords": [
+          "calm",
+          "casual",
+          "confident",
+          "smooth"
+        ],
+        "names": [
+          "Roger",
+          "Brian",
+          "Chris"
+        ]
+      },
+      "settings": {
+        "stability": 0.6,
+        "similarity_boost": 0.8,
+        "style": 0.2
+      },
+      "openai": "verse",
+      "direction": "A calm professional mercenary. Matter-of-fact, unbothered."
+    },
+    "lyrie": {
+      "elevenlabs": "",
+      "want": {
+        "gender": "female",
+        "age": [
+          "middle aged",
+          "young"
+        ],
+        "keywords": [
+          "british",
+          "sharp",
+          "confident",
+          "articulate",
+          "professional"
+        ],
+        "names": [
+          "Alice",
+          "Charlotte",
+          "Laura"
+        ]
+      },
+      "settings": {
+        "stability": 0.5,
+        "similarity_boost": 0.8,
+        "style": 0.4
+      },
+      "openai": "shimmer",
+      "direction": "An impatient, condescending scholar-wizard. Clipped and irritated."
+    },
+    "nualia": {
+      "elevenlabs": "",
+      "want": {
+        "gender": "female",
+        "age": [
+          "young",
+          "middle aged"
+        ],
+        "keywords": [
+          "intense",
+          "dramatic",
+          "seductive",
+          "dark",
+          "emotional",
+          "breathy"
+        ],
+        "names": [
+          "Charlotte",
+          "Aria",
+          "Matilda"
+        ]
+      },
+      "settings": {
+        "stability": 0.35,
+        "similarity_boost": 0.8,
+        "style": 0.65
+      },
+      "openai": "sage",
+      "direction": "A tragic, furious fallen priestess. Intense, haunted, venomous."
+    },
+    "thug": {
+      "elevenlabs": "",
+      "want": {
+        "gender": "male",
+        "age": [
+          "middle aged",
+          "young"
+        ],
+        "keywords": [
+          "rough",
+          "casual",
+          "gruff",
+          "street"
+        ],
+        "names": [
+          "Roger",
+          "Chris",
+          "Clyde"
+        ]
+      },
+      "settings": {
+        "stability": 0.45,
+        "similarity_boost": 0.7,
+        "style": 0.5
+      },
+      "openai": "verse",
+      "direction": "A rough street thug. Threatening, swaggering."
+    }
+  }
+}
