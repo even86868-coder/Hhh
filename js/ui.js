@@ -12,7 +12,8 @@ import { CombatView } from './render.js';
 import { SPELLS } from './spells.js';
 import { sfx, playMusic, stopMusic, settings as audioSettings, unlockAudio } from './audio.js';
 import { PERSONALITIES, DEFAULT_PERSONALITY } from './dialogue.js';
-import { speak, stopVoices, voiceSettings, VOICE_PRESETS, voiceAvailable } from './voice.js';
+import { speak, stopVoices, voiceSettings, VOICE_PRESETS, voiceAvailable, castList, setCast, listVoices } from './voice.js';
+import { gmSettings, sceneIntro, stageDirection, explainCheck, explainResult, GMCommentator } from './gm.js';
 import { aiSettings, AI_MODELS, getApiKey, setApiKey, testConnection, aiReady } from './aibanter.js';
 import { talkSettings, sceneLines, campLines, aiSceneLines, speakerOf, Barker } from './talk.js';
 
@@ -48,6 +49,8 @@ function savePrefs() {
   try { localStorage.setItem('runelords.prefs', JSON.stringify({ ...prefs, audio: audioSettings, voice: voiceSettings, talk: talkSettings, ai: { enabled: aiSettings.enabled, model: aiSettings.model } })); } catch (e) { /* ignore */ }
 }
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+gmSettings.mode = voiceSettings.gm || 'full';
+const GM_SPEAKER = { kind: 'gm', name: 'Game Master' };
 const autoplay = () => !!G.state?.autoplay;
 
 function spriteCanvas(src, scale = 4, cls = 'sprite') {
@@ -185,13 +188,34 @@ function showSettings() {
       h('label', { class: 'row' }, 'Character banter', btn(talkSettings.banter ? 'On' : 'Off', () => { talkSettings.banter = !talkSettings.banter; savePrefs(); render(); })),
       h('label', { class: 'row' }, 'Speech bubbles in battle', btn(talkSettings.bubbles ? 'On' : 'Off', () => { talkSettings.bubbles = !talkSettings.bubbles; savePrefs(); render(); })),
       voiceAvailable() ? h('label', { class: 'row' }, 'Character voices', btn(voiceSettings.enabled ? 'On' : 'Off', () => { voiceSettings.enabled = !voiceSettings.enabled; if (!voiceSettings.enabled) stopVoices(); savePrefs(); render(); })) : h('p', { class: 'hint' }, 'Voices are not supported on this device.'),
-      voiceAvailable() ? h('label', { class: 'row' }, 'Narrator reads the story', btn(voiceSettings.narrator ? 'On' : 'Off', () => { voiceSettings.narrator = !voiceSettings.narrator; savePrefs(); render(); })) : null,
+      h('label', { class: 'row' }, 'Game Master', btn({ full: 'Full', tips: 'Rules tips only', off: 'Off' }[voiceSettings.gm || 'full'], () => { voiceSettings.gm = { full: 'tips', tips: 'off', off: 'full' }[voiceSettings.gm || 'full']; gmSettings.mode = voiceSettings.gm; savePrefs(); render(); })),
+      voiceAvailable() ? h('label', { class: 'row' }, 'GM reads the story aloud', btn(voiceSettings.narrator ? 'On' : 'Off', () => { voiceSettings.narrator = !voiceSettings.narrator; savePrefs(); render(); })) : null,
+      voiceAvailable() ? h('label', { class: 'row' }, 'Voice casting', btn('Choose voices', () => { document.querySelector('.modal')?.remove(); showCasting(); })) : null,
       voiceAvailable() ? h('label', { class: 'row' }, 'Voice volume', btn(`${Math.round(voiceSettings.volume * 100)}%`, () => { voiceSettings.volume = voiceSettings.volume >= 1 ? 0.25 : Math.round((voiceSettings.volume + 0.25) * 100) / 100; savePrefs(); speak('Like this?', { kind: 'companion', name: 'Pip' }, { queue: false }); render(); })) : null,
       h('label', { class: 'row' }, 'Live AI banter', btn(aiSettings.enabled && getApiKey() ? 'On' : 'Set up', () => { document.querySelector('.modal')?.remove(); showAiSettings(); })),
     );
   };
   render();
   modal('Settings', body, [{ label: 'Done' }]);
+}
+
+function showCasting() {
+  const body = h('div', { class: 'casting' });
+  const voices = listVoices();
+  const render = () => {
+    body.innerHTML = '';
+    if (!voices.length) { body.append(h('p', {}, 'No voices are installed on this device.')); return; }
+    body.append(h('p', { class: 'hint' }, 'Pick a voice for each character. Voices marked ★ are the natural-sounding ones on your device. More natural voices: on Windows use Microsoft Edge ("Natural" voices), on iPhone/Mac download "Enhanced" or "Premium" voices in Settings → Accessibility → Spoken Content, on Android install Google\'s speech voices.'));
+    for (const c of castList()) {
+      const sel = h('select', { id: `cast-${c.key}`, onchange: (e) => { setCast(c.key, e.target.value); savePrefs(); } },
+        voices.map((v) => h('option', { value: v.voiceURI, selected: c.voice?.voiceURI === v.voiceURI }, `${/natural|neural|enhanced|premium|siri|google/i.test(v.name) ? '★ ' : ''}${v.name}`)));
+      const sample = { gm: 'Roll for initiative!', Brannoc: 'Form up. Behind me.', Tamsin: 'Dawnflower, guide our blades!', Quillan: 'Ooh, a tactical puzzle!', Pip: 'Dibs on whatever they\'re carrying!', hero: 'For Sandpoint!', goblin: 'Goblins chew and goblins bite!', beast: 'Grrrr.', villain: 'You will never stop me.' }[c.key];
+      const speaker = c.key === 'gm' ? GM_SPEAKER : c.key === 'hero' ? { kind: 'hero', preset: player()?.appearance?.voice || 'warm' } : ['goblin', 'beast', 'villain'].includes(c.key) ? { kind: 'monster', monsterKey: { goblin: 'goblin', beast: 'boar', villain: 'lyrie' }[c.key] } : { kind: 'companion', name: c.key };
+      body.append(h('div', { class: 'cast-row' }, h('b', {}, c.label), sel, btn('▶', () => speak(sample, speaker, { queue: false }), 'small')));
+    }
+  };
+  render();
+  modal('Voice Casting', body, [{ label: 'Done' }], { wide: true });
 }
 
 function showAiSettings() {
@@ -664,20 +688,34 @@ async function playBanter(node, nodeId, el, aiLinesPromise) {
     const ai = await Promise.race([aiLinesPromise, sleep(8000).then(() => null)]);
     if (ai && ai.length) lines = ai;
   }
-  if (node.rest) lines = [...lines, ...campLines(G.state)];
+  if (node.rest) lines = [...lines, ...campLines(G.state).map((l) => ({ ...l, camp: true }))];
   if (!G.state.flags.sceneSeen.includes(nodeId)) G.state.flags.sceneSeen.push(nodeId);
   save();
   if (!lines.length || !el.isConnected) return;
   let skip = false;
   const skipBtn = h('button', { class: 'skip-banter', onclick: () => { skip = true; stopVoices(); } }, 'Skip ▸▸');
   el.append(skipBtn);
+  // The Game Master sets the scene and frames who is speaking.
+  const gmFull = gmSettings.mode === 'full';
+  const script = [];
+  if (gmFull && lines[0] && !lines[0].camp) script.push({ gm: true, text: sceneIntro(false) });
+  let lastSpeaker = null;
+  let campIntro = false;
   for (const l of lines) {
+    if (gmFull && l.camp && !campIntro) { script.push({ gm: true, text: sceneIntro(true) }); campIntro = true; lastSpeaker = null; }
+    if (gmFull && l.c !== lastSpeaker && Math.random() < 0.45) { const dir = stageDirection(l.c, player().personality); if (dir) script.push({ gm: true, text: dir }); }
+    script.push(l);
+    lastSpeaker = l.c;
+  }
+  for (const l of script) {
     if (!el.isConnected) return;
-    const row = h('div', { class: `say ${l.c.isPlayer ? 'hero' : ''}` }, portraitOf(l.c, 2), h('div', { class: 'say-body' }, h('b', {}, l.c.name), h('span', {}, l.text)));
+    const row = l.gm
+      ? h('div', { class: 'say gm' }, spriteCanvas(npcSprite('gm'), 2, 'portrait'), h('div', { class: 'say-body' }, h('span', {}, l.text)))
+      : h('div', { class: `say ${l.c.isPlayer ? 'hero' : ''}` }, portraitOf(l.c, 2), h('div', { class: 'say-body' }, h('b', {}, l.c.name), h('span', {}, l.text)));
     el.insertBefore(row, skipBtn);
     if (skip) continue;
-    const minTime = (voiceSettings.enabled ? 700 : 1100) + l.text.length * (voiceSettings.enabled ? 20 : 32);
-    await Promise.all([speak(l.text, speakerOf(l.c)), sleep(minTime / Math.sqrt(prefs.speed))]);
+    const minTime = (voiceSettings.enabled ? 600 : (l.gm ? 800 : 1100)) + l.text.length * (voiceSettings.enabled ? 18 : 30);
+    await Promise.all([speak(l.text, l.gm ? GM_SPEAKER : speakerOf(l.c)), sleep(minTime / Math.sqrt(prefs.speed))]);
   }
   skipBtn.remove();
 }
@@ -709,7 +747,11 @@ function choose(node, ch, choicesEl) {
   choicesEl.innerHTML = '';
   const die = h('div', { class: 'die' }, '?');
   const result = h('div', { class: 'check-result' }, die, h('div', { class: 'check-text' }, `${r.who.isPlayer ? 'You' : r.who.name} roll${r.who.isPlayer ? '' : 's'} ${checkLabel(ch.check)}...`));
+  const gmOn = gmSettings.mode !== 'off';
+  const gmLine = gmOn ? explainCheck(ch.check, r.who.isPlayer ? 'You' : r.who.name, r.untrained ? null : r.mod, r.bonus) : null;
+  if (gmLine) choicesEl.append(h('div', { class: 'say gm' }, spriteCanvas(npcSprite('gm'), 2, 'portrait'), h('div', { class: 'say-body' }, h('span', {}, gmLine))));
   choicesEl.append(result);
+  const explained = gmLine ? speak(gmLine, GM_SPEAKER, { queue: false }) : Promise.resolve();
   sfx('dice');
   let n = 0;
   const spin = setInterval(() => {
@@ -724,8 +766,10 @@ function choose(node, ch, choicesEl) {
       result.querySelector('.check-text').append(h('b', { class: r.success ? 'good' : 'bad' }, r.success ? (r.roll === 20 ? 'Natural 20! Success!' : 'Success!') : 'Failure.'), h('div', { class: 'small' }, detail));
       const cont = h('button', { class: 'choice primary', onclick: () => { sfx('click'); enterNode(r.success ? ch.pass : ch.fail); } }, 'Continue');
       choicesEl.append(cont);
-      if (r.who) speak(r.success ? (r.roll === 20 ? 'Natural twenty!' : 'Success!') : 'Failure.', { kind: 'narrator' });
-      if (autoplay()) setTimeout(() => { if (cont.isConnected && autoplay()) cont.click(); }, 1600 / prefs.speed);
+      const verdict = gmOn ? explainResult(r) : null;
+      if (verdict) result.querySelector('.check-text').append(h('div', { class: 'small gm-verdict' }, verdict));
+      const said = explained.then(() => (verdict ? speak(verdict, GM_SPEAKER) : null));
+      if (autoplay()) Promise.all([said, sleep(1600 / prefs.speed)]).then(() => { if (cont.isConnected && autoplay()) cont.click(); });
     }
   }, 60);
 }
@@ -842,6 +886,9 @@ class CombatUI {
     if (typeof ResizeObserver !== 'undefined') new ResizeObserver(fit).observe(wrap);
     fit();
     this.view.speed = prefs.speed;
+    this.gmBox = h('div', { class: 'gm-box', hidden: true }, spriteCanvas(npcSprite('gm'), 2, 'portrait'), h('span', {}));
+    this.canvas.parentElement.append(this.gmBox);
+    this.gm = new GMCommentator({ state: G.state, show: (text) => this.gmSay(text) });
     this.barker = new Barker({ view: this.view, speed: prefs.speed, state: G.state, onLine: (name, text) => this.addLog(`${name}: "${text}"`, 'say') });
     engine.fx = this.wrapFx(this.view.fx);
     this.view.onCell = (x, y) => this.tap(x, y);
@@ -857,8 +904,18 @@ class CombatUI {
       ...fx,
       update() { self.renderOrder(); if (!self.mode) self.renderInfo(); },
       async turnStart(u) { self.renderOrder(); self.renderInfo(u); if (!u.isPlayer) self.hint.textContent = ''; await fx.turnStart(u); },
-      event(type, data, e) { self.barker.handle(type, data, e); },
+      event(type, data, e) { self.barker.handle(type, data, e); self.gm.handle(type, data, e); },
     };
+  }
+
+  gmSay(text) {
+    this.addLog(`GM: ${text}`, 'gm');
+    this.gmBox.querySelector('span').textContent = text;
+    this.gmBox.hidden = false;
+    clearTimeout(this.gmTimer);
+    const shown = speak(text, GM_SPEAKER);
+    const minTime = (2500 + text.length * 45) / Math.sqrt(prefs.speed);
+    Promise.all([shown, sleep(minTime)]).then(() => { this.gmTimer = setTimeout(() => { if (this.gmBox.querySelector('span').textContent === text) this.gmBox.hidden = true; }, 300); });
   }
 
   onAutoplayToggle() {
@@ -920,6 +977,8 @@ class CombatUI {
       this.unit = u;
       this.mode = null;
       sfx('click');
+      this.gm.tip('yourTurn');
+      if (e.fullAttackList(u, 'ranged').length > 1 || e.fullAttackList(u, 'melee').length > 1) this.gm.tip('fullAttack');
       keyHandler = (e) => {
         if (this.busy || !this.resolveTurn) return;
         const i = digit(e);

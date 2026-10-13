@@ -223,6 +223,7 @@ const NPC_LOOKS = {
   ameiko: { name: 'Ameiko', race: 'human', cls: 'rogue', appearance: { skin: 1, hair: 0, hairStyle: 1, outfit: 1 }, weapon: 'none' },
   hemlock: { name: 'Hemlock', race: 'human', cls: 'fighter', appearance: { skin: 3, hair: 0, hairStyle: 5, outfit: 6, beard: true }, weapon: 'longsword', shield: true },
   zantus: { name: 'Zantus', race: 'human', cls: 'cleric', appearance: { skin: 0, hair: 1, hairStyle: 0, outfit: 0 }, weapon: 'none' },
+  gm: { name: 'Game Master', race: 'human', cls: 'wizard', appearance: { skin: 2, hair: 4, hairStyle: 5, outfit: 6, beard: true }, weapon: 'staff' },
   shalelu: { name: 'Shalelu', race: 'elf', cls: 'ranger', appearance: { skin: 0, hair: 4, hairStyle: 4, outfit: 2 }, weapon: 'longbow' },
 };
 

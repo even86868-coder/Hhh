@@ -386,7 +386,8 @@ export class Combat {
     const s = t.stats();
     if (weapon && s.dr && !(src && src.smiteTarget === t.id)) {
       amt = Math.max(0, amt - s.dr.amt);
-      if (amt === 0) { this.log(`${t.name}'s damage reduction absorbs the blow!`, 'sys'); this.float(t, 'DR', '#ccc'); return 0; }
+      if (amt === 0) { this.log(`${t.name}'s damage reduction absorbs the blow!`, 'sys'); this.float(t, 'DR', '#ccc'); this.event('dr', { t }); return 0; }
+      if (amount > amt) this.event('dr', { t });
     }
     if (t.tempHp > 0) { const ab = Math.min(t.tempHp, amt); t.tempHp -= ab; amt -= ab; }
     const wasOut = t.out();
@@ -536,7 +537,7 @@ export class Combat {
     }
     const label = opts.label || prof.name;
     let line = `${att.name} ${opts.aoo ? 'AoO ' : ''}→ ${tgt.name} (${label}): ${r}${sign(bonus)}=${r + bonus} vs ${opts.touch ? 'touch ' : ''}AC ${ac}`;
-    if (sit.notes.length) line += ` [${sit.notes.join(', ')}]`;
+    if (sit.notes.length) { line += ` [${sit.notes.join(', ')}]`; this.event('notes', { att, tgt, notes: sit.notes }); }
     let dmg = 0;
     if (!hit) {
       line += concealMiss ? ' — misses (blinded)!' : r === 1 ? ' — fumble!' : ' — miss.';
@@ -590,6 +591,7 @@ export class Combat {
       if (o.aoo >= maxAoo) continue;
       o.aoo += 1;
       this.log(`${mover.name} ${why} and provokes an attack of opportunity!`, 'sys');
+      this.event('aoo', { att: o, tgt: mover });
       await this.resolveAttack(o, mover, os.attacks.melee[0], { aoo: true });
     }
   }
@@ -608,6 +610,7 @@ export class Combat {
           provoked.add(o.id);
           o.aoo += 1;
           this.log(`${u.name} moves out of ${o.name}'s reach — attack of opportunity!`, 'sys');
+          this.event('aoo', { att: o, tgt: u });
           await this.resolveAttack(o, u, os.attacks.melee[0], { aoo: true });
         }
       }
@@ -841,6 +844,7 @@ export class Combat {
     this.log(`${u.name} casts ${sp.name}!`, 'spell');
     this.event('spell', { u, key, sp });
     if (this.isThreatened(u)) {
+      this.event('defensive', { u });
       const s = u.stats();
       const dc = 15 + 2 * known.level;
       const r = d(20);
