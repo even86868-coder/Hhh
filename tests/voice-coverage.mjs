@@ -4,6 +4,7 @@ import { BARKS, MONSTER_BARKS, SCENES, CAMP, fill } from '../js/dialogue.js';
 import { STORY } from '../js/story.js';
 import { collectLines } from '../tools/voice-lines.mjs';
 import { lineKey, spokenForm, paragraphs, sentences, HERO_FALLBACK, MONSTER_PACK } from '../js/voicekey.js';
+import { splitDialogue, defaultSpeaker, NPC_VOICES, COMPANION_NAMES } from '../js/speakers.js';
 import { readFileSync } from 'fs';
 
 const cast = JSON.parse(readFileSync('voices/cast.json', 'utf8'));
@@ -31,24 +32,30 @@ for (const [ev, by] of Object.entries(BARKS)) for (const [sp, lines] of Object.e
 }
 for (const [k, lines] of Object.entries(MONSTER_BARKS)) for (const l of lines) check(MONSTER_PACK[k], l, `monster:${k}`);
 
-// Narration: whole passage, else paragraphs, else sentences. Count sentences left to the device voice.
+// Story text: quotes in the speaker's voice; narration whole, else by paragraph, else by sentence.
 let sentencesTotal = 0;
+let quotesTotal = 0;
 const narrMisses = [];
+const voiceOf = (who) => (who === 'hero' ? 'hero_b' : COMPANION_NAMES.includes(who) ? who : NPC_VOICES[who]);
 for (const [id, node] of Object.entries(STORY)) {
   if (node.combat || !node.text || typeof node.text !== 'string') continue;
   for (const role of Object.keys(ROLE)) {
     const names = { ...ROLE, [role]: NAME, name: NAME, who: 'You' };
     const t = node.text.replace(/\{(\w+)\}/g, (m, k) => names[k] ?? m);
-    for (const p of paragraphs(t)) for (const s of sentences(p)) sentencesTotal++;
-    if (clip('gm', t)) continue;
-    for (const p of paragraphs(t)) {
-      if (clip('gm', p)) continue;
-      for (const s of sentences(p)) if (!found('gm', s)) narrMisses.push(`${id}: ${s}`);
+    const segs = splitDialogue(t, { playerName: NAME, fallback: defaultSpeaker(id, node) });
+    for (const seg of segs.some((x) => x.who) ? segs : [{ who: null, text: t }]) {
+      if (seg.who) { quotesTotal++; if (!found(voiceOf(seg.who), seg.text)) narrMisses.push(`${id} [${seg.who}]: ${seg.text}`); continue; }
+      for (const p of paragraphs(seg.text)) for (const s of sentences(p)) sentencesTotal++;
+      if (clip('gm', seg.text)) continue;
+      for (const p of paragraphs(seg.text)) {
+        if (clip('gm', p)) continue;
+        for (const s of sentences(p)) if (!found('gm', s)) narrMisses.push(`${id}: ${s}`);
+      }
     }
   }
 }
 const uniq = (a) => [...new Set(a)];
 console.log(`Dialogue: ${total - misses.length}/${total} lines recorded.`);
 uniq(misses).forEach((m) => console.log('  device voice:', m));
-console.log(`Narration: ${sentencesTotal - narrMisses.length}/${sentencesTotal} sentences recorded.`);
+console.log(`Story text: ${sentencesTotal + quotesTotal - narrMisses.length}/${sentencesTotal + quotesTotal} narration sentences and character quotes recorded.`);
 uniq(narrMisses).forEach((m) => console.log('  device voice:', m));

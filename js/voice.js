@@ -1,6 +1,7 @@
 // Character voices. Recorded clips from the voice pack (voices/) play when available;
 // everything else uses the device's built-in speech synthesis (free, offline).
 import { lineKey, packVoice, HERO_FALLBACK, spokenForm, paragraphs, sentences } from './voicekey.js';
+import { splitDialogue, NPC_VOICES, COMPANION_NAMES } from './speakers.js';
 // To sound less robotic we (1) rank the installed voices and prefer the natural/neural
 // ones, (2) give each character a *different voice* instead of heavy pitch-shifting,
 // and (3) speak sentence by sentence with natural pauses.
@@ -32,7 +33,7 @@ export async function loadVoicePack() {
 if (typeof window !== 'undefined') loadVoicePack();
 
 // The player's name (set by the UI) lets lines that address the player use a recording made without it.
-export const voiceContext = { playerName: '' };
+export const voiceContext = { playerName: '', heroPreset: 'warm' };
 function clipFor(text, speaker) {
   if (!text || !voiceSettings.recorded || !pack.keys.size) return null;
   const pv = packVoice(speaker);
@@ -46,25 +47,57 @@ function recordedClip(text, speaker) {
   const name = voiceContext.playerName;
   return clipFor(text, speaker) || (name && text.includes(name) ? clipFor(spokenForm(text, name), speaker) : null);
 }
-// What to play for a line: recordings where they exist, the device voice for the rest.
-// Narration falls back paragraph by paragraph, then sentence by sentence.
-function plan(text, speaker) {
+// The speaker for a character named in the story text.
+export function storySpeaker(who) {
+  if (who === 'hero') return { kind: 'hero', preset: voiceContext.heroPreset };
+  if (COMPANION_NAMES.includes(who)) return { kind: 'companion', name: who };
+  return { kind: 'npc', name: who, voice: NPC_VOICES[who] };
+}
+// Narration read by one voice: whole passage, else paragraph by paragraph, else sentence by sentence.
+function narratorParts(text, speaker) {
   const whole = recordedClip(text, speaker);
-  if (whole) return [{ clip: whole, text }];
-  if (speaker.kind !== 'narrator' && speaker.kind !== 'gm') return [{ text }];
+  if (whole) return [{ clip: whole, text, speaker }];
   const out = [];
   for (const p of paragraphs(text)) {
     const c = recordedClip(p, speaker);
-    if (c) { out.push({ clip: c, text: p }); continue; }
+    if (c) { out.push({ clip: c, text: p, speaker }); continue; }
     for (const s of sentences(p)) {
       const sc = recordedClip(s, speaker);
       const last = out[out.length - 1];
-      if (sc) out.push({ clip: sc, text: s });
+      if (sc) out.push({ clip: sc, text: s, speaker });
       else if (last && !last.clip) last.text += ` ${s}`;
-      else out.push({ text: s });
+      else out.push({ text: s, speaker });
     }
   }
-  return out.some((x) => x.clip) ? out : [{ text }];
+  return out;
+}
+// What to play for a line: recordings where they exist, the device voice for the rest.
+// In story narration, quoted lines are spoken by the character who says them.
+function plan(text, speaker) {
+  const whole = recordedClip(text, speaker);
+  if (whole && !(speaker.kind === 'narrator' && voiceSettings.recorded && dialogueRecorded(text, speaker))) return [{ clip: whole, text, speaker }];
+  if (speaker.kind !== 'narrator' && speaker.kind !== 'gm') return [{ text, speaker }];
+  if (speaker.kind === 'narrator') {
+    const segs = splitDialogue(text, { playerName: voiceContext.playerName, fallback: speaker.fallback });
+    if (segs.some((s) => s.who)) {
+      const out = [];
+      for (const s of segs) {
+        if (!s.who) { out.push(...narratorParts(s.text, speaker)); continue; }
+        const sp = storySpeaker(s.who);
+        const c = recordedClip(s.text, sp);
+        out.push(c ? { clip: c, text: s.text, speaker: sp } : { text: s.text, speaker: sp });
+      }
+      return out;
+    }
+  }
+  const parts = narratorParts(text, speaker);
+  return parts.some((x) => x.clip) ? parts : [{ text, speaker }];
+}
+// True when the characters' own recordings exist for this passage's quotes.
+function dialogueRecorded(text, speaker) {
+  const segs = splitDialogue(text, { playerName: voiceContext.playerName, fallback: speaker.fallback });
+  const said = segs.filter((s) => s.who);
+  return said.length > 0 && said.some((s) => recordedClip(s.text, storySpeaker(s.who)));
 }
 let currentAudio = null;
 function playClip(url, gen) {
@@ -108,7 +141,11 @@ const CHAR = {
   goblin: { label: 'Goblins', pitch: 1.45, rate: 1.15, pref: 'any', order: 6 },
   beast: { label: 'Beasts', pitch: 0.7, rate: 0.85, pref: 'm', order: 7 },
   villain: { label: 'Villains', pitch: 0.88, rate: 0.92, pref: 'any', order: 8 },
+  townsfolk: { label: 'Townsfolk (men)', pitch: 0.95, rate: 0.98, pref: 'm', order: 9 },
+  townswomen: { label: 'Townsfolk (women)', pitch: 1.05, rate: 0.98, pref: 'f', order: 10 },
 };
+// Device-voice stand-ins for story characters, by their recorded voice.
+const NPC_TTS = { ameiko: 'townswomen', shalelu: 'townswomen', mirela: 'townswomen', granny: 'townswomen', woman: 'townswomen', child: 'townswomen', lyrie: 'villain', nualia: 'villain', tsuto: 'villain', orik: 'villain', goblin: 'goblin', ripnugget: 'goblin' };
 
 const FEMALE = /samantha|victoria|karen|moira|tessa|zira|susan|hazel|female|fiona|serena|allison|ava|jenny|aria|libby|sonia|catherine|kate|emma|amy|joanna|salli|kimberly|ivy|linda|heather|natasha|clara|michelle|sara|nancy|ana\b|emily|olivia|zoe|ruth|aurora/i;
 const MALE = /daniel|alex|david|mark|george|fred|\bmale|ryan|guy|thomas|james|oliver|arthur|aaron|matthew|joey|justin|brian|eric|steffan|christopher|roger|rishi|tom\b|andrew|brandon|davis|tony|jason|william|liam|noah/i;
@@ -171,6 +208,7 @@ export function setCast(key, voiceURI) {
 function resolve(sp) {
   if (sp.kind === 'companion' && CHAR[sp.name]) return { key: sp.name, ...CHAR[sp.name] };
   if (sp.kind === 'hero') { const p = VOICE_PRESETS[sp.preset] || VOICE_PRESETS.warm; return { key: 'hero', ...p }; }
+  if (sp.kind === 'npc') { const k = NPC_TTS[sp.voice] || 'townsfolk'; return { key: k, ...CHAR[k] }; }
   if (sp.kind === 'monster') {
     if (/goblin|warchanter|ripnugget|erylium/i.test(sp.monsterKey || '')) return { key: 'goblin', ...CHAR.goblin };
     if (/dog|boar|sinspawn|yeth/i.test(sp.monsterKey || '')) return { key: 'beast', ...CHAR.beast };
@@ -227,12 +265,12 @@ export function speak(text, speaker = { kind: 'gm' }, { queue = true } = {}) {
   const canSynth = !!synth && voices.length > 0;
   if (!canSynth && !parts.some((x) => x.clip)) return Promise.resolve(); // nothing can speak (e.g. some Linux setups)
   const gen = generation;
-  const prof = resolve(speaker);
   const run = async () => {
     for (const part of parts) {
       if (gen !== generation) return;
       if (part.clip && (await playClip(part.clip, gen))) continue;
       if (!canSynth) continue;
+      const prof = resolve(part.speaker || speaker);
       const voice = voiceFor(prof.key);
       for (const c of chunks(part.text)) { if (gen !== generation) return; await utter(c, prof, voice, gen); }
     }
