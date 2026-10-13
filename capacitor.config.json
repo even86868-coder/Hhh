@@ -1,0 +1,8 @@
+{
+  "appId": "io.github.even86868coder.runelords",
+  "appName": "Runelords",
+  "webDir": "www",
+  "android": {
+    "backgroundColor": "#1a1030"
+  }
+}

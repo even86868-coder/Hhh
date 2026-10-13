@@ -41,6 +41,18 @@ Each character's voice and acting direction is set in `voices/cast.json`.
 
 When new story content adds lines, run it again: it only records what's new.
 
+## Play on Android
+
+Every push to `main` also builds an Android app and puts it on the **Releases** page next to the PC versions (https://github.com/even86868-coder/Hhh/releases/latest):
+
+1. On your Android phone or tablet, open that page and download **`Runelords-Android.apk`**.
+2. Tap the download to install it. If Android asks, allow your browser to **install unknown apps**.
+3. Open **Runelords** from your home screen. Everything, including the recorded voices, works offline.
+
+New versions install over the old one and keep your save. The app is built with [Capacitor](https://capacitorjs.com/) by `tools/build-android.sh`. It is signed with the project's own key (`mobile/debug.keystore`), not a Play Store key.
+
+iPhones and iPads can't install apps from outside the App Store without a paid Apple developer account, so on iOS use the web version (Safari → Share → **Add to Home Screen**).
+
 ## Play on your PC
 
 Every push to `main` builds the PC versions automatically and publishes them on the repo's **Releases** page (https://github.com/even86868-coder/Hhh/releases/latest):
