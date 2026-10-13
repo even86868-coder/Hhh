@@ -392,3 +392,253 @@ export const HOOKS = {
     { t: 'First, investigate the growling beneath the shrine.', if: (s) => !s.flags.tt_vaultDone, ret: 'nualia_after', go: 'tt_vault' },
   ],
 };
+
+export const SCENES = {
+  tt_scout: [
+    { who: 'skirm', text: 'Can we keep him? I\'ll feed him. I\'ll walk him.' },
+    { who: 'healer', text: 'He\'s terrified. Look at his little ears shaking.' },
+    { who: 'hero', text: H('Nobody eats anybody. Let\'s hear him out.', 'Aww. He\'s like an angry turnip!', 'Goblins bite. Careful.', 'Caught in his own trap. Relatable, honestly.') },
+  ],
+  tt_scout_spare: [
+    { who: 'healer', text: 'That was kind. Kindness has a way of coming back around.' },
+    { who: 'tank', text: 'Or stabbing you in the back.' },
+    { who: 'skirm', text: 'He licked his own forehead. That\'s binding. That\'s practically a contract.' },
+  ],
+  tt_scout_talk: [
+    { who: 'arcane', text: 'Sea caves! Tidal ingress points are classic smuggler architecture!' },
+    { who: 'tank', text: 'Snappy things, he said.' },
+    { who: 'hero', text: H('Good. Now we have options.', 'Ooh, a secret entrance! I love a secret entrance.', 'Useful. Remember it.', 'Snappy things. Fantastic. Love the specificity.') },
+  ],
+  tt_scout_bolt: [
+    { who: 'skirm', text: 'Okay, in fairness, that was very good wriggling.' },
+    { who: 'tank', text: 'Shields up. Here they come.' },
+  ],
+  tt_scout_path: [
+    { who: 'tank', text: 'Never crawling through a goblin road again.' },
+    { who: 'arcane', text: 'I believe a bramble is now living in my hair. Permanently.' },
+    { who: 'healer', text: 'And nobody saw us. Thank you, Nibsy.' },
+  ],
+  tt_hermit: [
+    { who: 'arcane', text: 'Those chimes are knucklebones. Probably rabbit. Probably.' },
+    { who: 'skirm', text: 'That crow is judging me. I can feel it.' },
+    { who: 'hero', text: H('Respect her home. We\'re guests here.', 'Hi, Granny! Sorry about the mushrooms!', 'Watch the crow.', 'Charming. She hates us already. We\'re making progress.') },
+  ],
+  tt_hermit_fence: [
+    { who: 'tank', text: 'Good fence. Honest work.' },
+    { who: 'arcane', text: 'Could someone please remove the crow? It\'s nesting.' },
+  ],
+  tt_hermit_splinter: [
+    { who: 'healer', text: 'Hold still. No, the other place. No, STILL.' },
+    { who: 'tank', text: 'Fence won.' },
+    { who: 'skirm', text: 'The fence was rigged. I\'m sure of it.' },
+  ],
+  tt_hermit_rude: [
+    { who: 'arcane', text: 'Ow! She has the swing of a war-mage!' },
+    { who: 'skirm', text: 'The crow robbed someone FOR us. I think I\'m in love.' },
+    { who: 'hero', text: H('Lesson learned: no fish for sea folk.', 'That went... surprisingly well, considering the broom?', 'Run now. Talk later.', 'Fish. To a woman by the sea. Genius move.') },
+  ],
+  tt_hermit_tea: [
+    { who: 'healer', text: 'This tea is wonderful. What\'s in it?' },
+    { who: 'arcane', text: 'A dog that is not a dog. A fiend? A Thassilonian binding? I have so many questions and she is so scary.' },
+    { who: 'hero', text: H('We\'ll keep that promise.', 'We promise, Granny! Pinky swear!', 'Noted. No doors.', 'Great. Another thing that wants to eat us.') },
+  ],
+  tt_caves_find: [
+    { who: 'tank', text: 'Cold water. Wonderful.' },
+    { who: 'skirm', text: 'Rocks are faster. Rocks are always faster.' },
+    { who: 'arcane', text: 'The tide schedule here is very interesting. And rising. Mostly rising.' },
+  ],
+  tt_caves_tide: [
+    { who: 'healer', text: 'I have seaweed in places seaweed should not be.' },
+    { who: 'tank', text: 'Bridge it is.' },
+  ],
+  tt_caves_cold: [
+    { who: 'arcane', text: 'I cannot feel my toes. I may never feel my toes again.' },
+    { who: 'healer', text: 'Keep moving. Movement keeps you warm.' },
+  ],
+  tt_caves_slip: [
+    { who: 'skirm', text: 'I\'d give that a ten. The crab gives it a six.' },
+    { who: 'hero', text: H('I\'m fine! Onward!', 'I MEANT to do that! Crab and all!', 'Nobody saw that.', 'Not one word. Not ONE.') },
+  ],
+  tt_caves_inner: [
+    { who: 'arcane', text: 'Reefclaws! Their pincers can sever... oh, never mind the details.' },
+    { who: 'skirm', text: 'Crates. Lots of lovely, unattended crates.' },
+    { who: 'tank', text: 'Claws first. Crates after.' },
+  ],
+  tt_caves_sneak: [
+    { who: 'skirm', text: 'He calls for his mama. That\'s adorable. Still stabbing him, though.' },
+    { who: 'healer', text: 'Quietly, please. Quietly.' },
+  ],
+  tt_caves_noticed: [
+    { who: 'tank', text: 'Who kicked the pebble?' },
+    { who: 'skirm', text: 'Not me. Probably the crab.' },
+  ],
+  tt_caves_loot: [
+    { who: 'healer', text: 'These are from Sandpoint. Someone\'s been stealing from our neighbors.' },
+    { who: 'skirm', text: 'And now we\'re stealing it back. Which makes it not stealing. It\'s returning!' },
+    { who: 'hero', text: H('We\'ll return what we can to the town.', 'Cheese! So much cheese!', 'Take the potions. Leave the rest.', 'Smugglers working with goblins. Classy.') },
+  ],
+  tt_caves_cache: [
+    { who: 'arcane', text: 'Feel that hum! Proper Magnimar enchanting!' },
+    { who: 'tank', text: 'Warm, too.' },
+    { who: 'skirm', text: 'I look fabulous. Somebody say I look fabulous.' },
+  ],
+  tt_caves_stair: [
+    { who: 'arcane', text: 'Thassilonian! The goblins are squatting on a ruin and don\'t even know it!' },
+    { who: 'tank', text: 'Quiet. Someone\'s singing up there.' },
+  ],
+  tt_caves_kennel: [
+    { who: 'tank', text: 'Dogs. Should\'ve guessed.' },
+    { who: 'healer', text: 'Who got bitten? Everyone? Of course everyone.' },
+  ],
+  tt_caves_emerge: [
+    { who: 'skirm', text: 'Inside and unseen. That is how professionals do it.' },
+    { who: 'hero', text: H('We\'re in. Stay sharp.', 'Sneaky sneaky! We\'re so good at this!', 'Inside. Quiet now.', 'Sure, ignore the smell. Totally fine.') },
+  ],
+  tt_caves_backdoor: [
+    { who: 'skirm', text: 'That ham. That beautiful, abandoned ham.' },
+    { who: 'healer', text: 'Keep walking.' },
+    { who: 'tank', text: 'Remind me to thank that goblin.' },
+  ],
+  tt_pit: [
+    { who: 'healer', text: 'They\'ve been down there a while. Look how thin they are.' },
+    { who: 'tank', text: 'Still goblins.' },
+    { who: 'hero', text: H('Prisoners deserve a fair hearing. Even goblins.', 'A goblin with a speech prepared! This is the best day!', 'Careful. Goblins lie.', 'Ah yes, goblin politics. My favorite flavor of chaos.') },
+  ],
+  tt_pit_feed: [
+    { who: 'skirm', text: 'That one\'s hugging the cheese. I respect that.' },
+    { who: 'healer', text: 'There. Everyone deserves a drink of water.' },
+  ],
+  tt_pit_chuff: [
+    { who: 'arcane', text: 'He can count to eleven. That puts him ahead of several Magnimar councilors.' },
+    { who: 'tank', text: 'Small fires. Hm.' },
+  ],
+  tt_pit_chuff_shrug: [
+    { who: 'skirm', text: 'Teach me to do the eye thing. Please.' },
+    { who: 'hero', text: H('Well. That was unsettling.', 'How does he DO that?!', 'Learned nothing.', 'I will never unsee that.') },
+  ],
+  tt_pit_truth: [
+    { who: 'healer', text: 'He\'s afraid. Of whatever is under that shrine.' },
+    { who: 'arcane', text: 'If the goblins fear it, we should listen.' },
+  ],
+  tt_pit_haggle: [
+    { who: 'skirm', text: 'That\'s a VERY nice crown. Just saying.' },
+    { who: 'tank', text: 'Birthday candles. We\'re arguing about birthday candles.' },
+  ],
+  tt_pit_deal: [
+    { who: 'healer', text: 'If this holds, Sandpoint might finally have a quiet summer.' },
+    { who: 'arcane', text: 'Historians will call this the Treaty of the Pit! Possibly. I will call it that.' },
+    { who: 'hero', text: H('Keep your word, Chief, and we\'ll keep ours.', 'Long live Chief Chuffwhistle!', 'We\'ll be watching, Chief.', 'Congratulations on your pot.') },
+  ],
+  tt_pit_nibsy: [
+    { who: 'skirm', text: 'Our little guy! All grown up! I\'m not crying, YOU\'RE crying.' },
+    { who: 'tank', text: 'Good choice.' },
+    { who: 'healer', text: 'Be a kind chief, Nibsy.' },
+  ],
+  tt_pit_refuse: [
+    { who: 'tank', text: 'Can\'t trust a goblin treaty.' },
+    { who: 'healer', text: 'Maybe not. But we can still be merciful.' },
+  ],
+  tt_study: [
+    { who: 'tank', text: 'So. Dental. Tell me about it.' },
+    { who: 'skirm', text: 'Go, go, go. I\'ll cough if anyone looks.' },
+  ],
+  tt_study_trap: [
+    { who: 'arcane', text: 'A magic mouth! Oh, that\'s an elegant little alarm, actually.' },
+    { who: 'hero', text: H('Grab what matters and go!', 'Eep! Grab stuff! Run!', 'Move. Now.', 'Lovely. A screaming door. Just what I needed.') },
+  ],
+  tt_study_grab: [
+    { who: 'skirm', text: 'Shopping lists AND a scandal. Nice haul.' },
+    { who: 'tank', text: 'Orik ought to see that ledger.' },
+  ],
+  tt_study_in: [
+    { who: 'arcane', text: 'Look at the string! She connected everything! I want to marry this wall.' },
+    { who: 'skirm', text: 'That box is begging to be opened.' },
+  ],
+  tt_study_lore: [
+    { who: 'arcane', text: 'The seven sins of Thassilon. Greed first. Always greed first.' },
+    { who: 'healer', text: 'A hound bound beneath the shrine. We have to find it.' },
+    { who: 'hero', text: H('The more we know, the better we fight.', 'Ooh, ancient secrets AND office drama!', 'Bad news, all of it.', 'Great. An empire waking up. That\'s fine.') },
+  ],
+  tt_study_muddle: [
+    { who: 'arcane', text: 'A triple cipher. She\'s a monster. A genius monster.' },
+    { who: 'skirm', text: 'Soup? It says soup? I like this wizard now.' },
+  ],
+  tt_study_scroll: [
+    { who: 'skirm', text: 'Tiny dragon locks are my favorite kind of lock.' },
+    { who: 'arcane', text: 'A binding scroll. We might need this very soon.' },
+  ],
+  tt_study_jam: [
+    { who: 'healer', text: 'Let me see that finger. Oh, that\'s swelling. Stop poking it.' },
+    { who: 'hero', text: H('It\'s nothing. Let\'s go.', 'The dragon BIT me! Rude!', 'Leave it.', 'Bitten by a lock. My life is a comedy.') },
+  ],
+  tt_ledger_fail: [
+    { who: 'tank', text: 'Stubborn. Can\'t fault him.' },
+    { who: 'skirm', text: 'Well, now SHE\'S angry. Worth it.' },
+  ],
+  tt_vault: [
+    { who: 'arcane', text: 'Those are Thassilonian binding wards. Very old, very strained.' },
+    { who: 'tank', text: 'Whatever that is, it\'s big.' },
+    { who: 'healer', text: 'Dawnflower, give us strength.' },
+  ],
+  tt_vault_sealed: [
+    { who: 'healer', text: 'It held. Thank the light, it held.' },
+    { who: 'arcane', text: '"Another time." It TALKED. I hate that it talked.' },
+    { who: 'hero', text: H('Sealed. Sandpoint sleeps safe tonight.', 'We did it! Bye, scary doggy!', 'For now.', '"Another time." Sure. Mark your calendar.') },
+  ],
+  tt_vault_backlash: [
+    { who: 'tank', text: 'Again. Together.' },
+    { who: 'arcane', text: 'It\'s fighting back! The wards are fighting us!' },
+  ],
+  tt_vault_peek: [
+    { who: 'healer', text: 'Don\'t listen to it! Look at me, not the door!' },
+    { who: 'tank', text: 'Step away. Now.' },
+  ],
+  tt_vault_peek_ok: [
+    { who: 'tank', text: 'Got you. Breathe.' },
+    { who: 'hero', text: H('It knows us now. Let it remember.', 'Okay. Okay. That was a lot of teeth.', 'Never again.', 'Note to self: no peeking at hellhounds.') },
+  ],
+  tt_vault_crack: [
+    { who: 'healer', text: 'What did it do to you? Look at me. Are you still you?' },
+    { who: 'arcane', text: 'The seal is cracked. Not broken. Cracked. We need to tell someone. Everyone.' },
+    { who: 'tank', text: 'Out. Now.' },
+  ],
+  tt_vault_leave: [
+    { who: 'healer', text: 'We\'ll come back. When we\'re ready.' },
+    { who: 'hero', text: H('Some battles wait for another day.', 'Nope! Nope nope nope. Bye!', 'Not today.', 'Leaving the giant demon dog alone. Truly our wisest choice.') },
+  ],
+};
+
+export const CAMP = [
+  { if: (s) => !!s.flags.tt_goblinFriend, lines: [
+    { who: 'skirm', text: 'Do you think Nibsy is okay out there?' },
+    { who: 'tank', text: 'He\'s a goblin. He\'s fine.' },
+    { who: 'skirm', text: 'You\'re worried about him too. I can tell.' },
+    { who: 'tank', text: '...A little.' },
+  ] },
+  { if: (s) => !!s.flags.tt_hermitMet, lines: [
+    { who: 'arcane', text: 'That crow of Granny Ogwen\'s had a very intelligent eye. Possibly a familiar.' },
+    { who: 'healer', text: 'Or possibly just a crow who knows we\'re easy marks.' },
+    { who: 'hero', text: H('Either way, I hope she\'s safe.', 'I miss that crow already!', 'Crow\'s a thief.', 'It stole for us. Best crow in Varisia.') },
+  ] },
+  { if: (s) => !!s.flags.tt_goblinChief, lines: [
+    { who: 'healer', text: 'A goblin chief who swore off burning towns. Do you think it will last?' },
+    { who: 'hero', text: H('If we keep our side, maybe they\'ll keep theirs.', 'I believe in our little goblin chief!', 'A month. Maybe two.', 'Define "last." Do cozy fires count?') },
+    { who: 'tank', text: 'We\'ll find out.' },
+  ] },
+  { if: (s) => !!s.flags.tt_lyrieNotes, lines: [
+    { who: 'arcane', text: 'Lyrie\'s notes keep me up at night. Seven sins, seven runelords, and one of them waking up.' },
+    { who: 'skirm', text: 'Which one\'s the greedy one?' },
+    { who: 'arcane', text: 'Karzoug. Why?' },
+    { who: 'skirm', text: 'No reason. Professional curiosity.' },
+  ] },
+  { if: (s) => !!s.flags.tt_sealCracked, lines: [
+    { who: 'healer', text: 'You\'re quiet tonight. Is it the thing under Thistletop?' },
+    { who: 'hero', text: H('It thanked me. I can\'t stop hearing it.', 'I\'m fine! Totally! It just... said my name, is all.', 'It\'ll come. We\'ll be ready.', 'A demon dog owes me a favor. That\'s not ominous at all.') },
+    { who: 'healer', text: 'Then we face it together. Like everything else.' },
+  ] },
+  { if: (s) => !!s.flags.tt_sealed, lines: [
+    { who: 'tank', text: 'That door. Good work, sealing it.' },
+    { who: 'arcane', text: 'Wards like that don\'t last forever, though.' },
+    { who: 'tank', text: 'Long enough is enough.' },
+  ] },
+];
