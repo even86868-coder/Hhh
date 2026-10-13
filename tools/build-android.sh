@@ -10,6 +10,7 @@ cd "$(dirname "$0")/.."
 rm -rf www && mkdir -p www/voices
 cp -r index.html manifest.webmanifest css js icons www/
 cp -r voices/index.json voices/clips www/voices/
+mkdir -p www/art && cp -r art/index.json art/img www/art/
 
 # 2. The Android project (generated fresh each time).
 [ -d android ] || npx cap add android

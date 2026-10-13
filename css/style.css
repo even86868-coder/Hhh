@@ -290,3 +290,11 @@ kbd { display: none; }
 .ll.c-gm { color: var(--gold); }
 .cast-row { display: grid; grid-template-columns: 90px minmax(0, 1fr) auto; gap: 8px; align-items: center; margin: 8px 0; }
 .cast-row select { font-size: 14px; min-width: 0; }
+
+/* Painted art */
+img.art { image-rendering: auto; object-fit: cover; display: block; }
+img.portrait.art { border-radius: 4px; }
+.say img.portrait.art, .gm-box img.portrait.art { padding: 0; }
+img.scene.art { aspect-ratio: 16 / 9; width: 100%; height: auto; }
+img.npc-portrait.art { border-radius: 50%; border: 3px solid var(--ink); box-shadow: 0 0 0 2px var(--gold); }
+.creator-preview img.sprite.big.art { width: 96px; height: 96px; border-radius: 50%; border: 3px solid var(--ink); box-shadow: 0 0 0 2px var(--gold); background: none; }

@@ -1,0 +1,8 @@
+{
+  "_readme": "Settings for tools/generate-art.mjs (the painted art). quality: low | medium | high. If the account can't use 'model', fallbackModels says what to try next. pricePerImage is only used for the cost estimate (USD per 1024x1024 image; wide scenes count 1.5x).",
+  "model": "gpt-image-2",
+  "fallbackModels": { "gpt-image-2": "gpt-image-1.5", "gpt-image-1.5": "gpt-image-1" },
+  "quality": "medium",
+  "compression": 80,
+  "pricePerImage": { "low": 0.006, "medium": 0.053, "high": 0.211 }
+}

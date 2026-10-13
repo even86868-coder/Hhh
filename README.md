@@ -22,6 +22,19 @@ A cute pixel-art phone game retelling **Chapter 1 (Burnt Offerings)** of the *Ri
 
 Want an App Store or Play Store build? The game is static HTML/JS, so it can be wrapped as-is with [Capacitor](https://capacitorjs.com/) (`npx cap init`, set `webDir` to this folder, `npx cap add ios` / `android`).
 
+## Painted art
+
+Portraits, battle tokens and scene backgrounds can be painted by an AI image model (OpenAI) in the style of tabletop fantasy rulebook art. The game shows a painting wherever one exists and the original pixel sprites everywhere else. You can switch back with **Settings → Art style**.
+
+There are about 156 images: a hero portrait for every race, class and build, the companions, story characters, monsters and 17 scene backgrounds. At medium quality that's roughly $9 of OpenAI credit. Prompts are in `tools/art-list.mjs`; model and quality are in `art/art.json`.
+
+1. Create an OpenAI API key at platform.openai.com (Dashboard → API keys) and add some credit under Billing.
+2. In the repo: **Settings → Secrets and variables → Actions → New repository secret**, named `OPENAI_API_KEY`.
+3. **Actions → Paint game art → Run workflow**:
+   - **paint a sample (one of each kind)** paints 5 test images.
+   - **paint everything missing** paints the rest. It takes about 30–60 minutes because new OpenAI accounts can only make a few images a minute.
+4. Don't like an image? Run it again with its key in **redo**, for example `npc:ameiko`.
+
 ## Recorded voice pack
 
 Every fixed line in the game (combat reactions, party conversations, campfire talks, Game Master lines, story narration) can be recorded as an audio file with an AI voice service, so characters sound like voice actors instead of text-to-speech. The game plays a recording when one exists and uses the device's built-in voices for everything else (for example, lines that say your hero's name, live AI banter, and skill-check numbers).

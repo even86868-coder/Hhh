@@ -1,5 +1,6 @@
 // Combat canvas renderer + animation hooks (the engine's `fx`).
 import { drawTile, spriteFor, makeCanvas } from './sprites.js';
+import { artImage, unitArtKey } from './art.js';
 import { sfx } from './audio.js';
 
 const S = 4; // screen pixels per art pixel
@@ -181,37 +182,6 @@ export class CombatView {
       c.globalAlpha = 1;
     }
 
-    // units: dead first, then sorted by y
-    const units = [...e.units].filter((u) => !u.fled).sort((a, b) => (a.dead ? -1 : 0) - (b.dead ? -1 : 0) || (this.pos.get(a.id).y - this.pos.get(b.id).y));
-    for (const u of units) this.drawUnit(c, u, t);
-
-    // target markers
-    for (const u of this.hl.targets) {
-      const p = this.pos.get(u.id);
-      c.strokeStyle = `rgba(255,70,70,${0.6 + Math.sin(t / 150) * 0.3})`;
-      c.lineWidth = 1;
-      c.strokeRect(p.x * TS + 0.5, p.y * TS + 0.5, TS - 1, TS - 1);
-      c.fillStyle = '#ff4646';
-      const by = Math.floor(Math.sin(t / 150) * 1.5);
-      c.fillRect(p.x * TS + 7, p.y * TS - 4 + by, 2, 2); c.fillRect(p.x * TS + 6, p.y * TS - 6 + by, 4, 2);
-    }
-    // current unit marker
-    const cur = e.current;
-    if (cur && !cur.dead) {
-      const p = this.pos.get(cur.id);
-      c.fillStyle = '#ffd84a';
-      const by = Math.floor(Math.sin(t / 180) * 1.5);
-      c.fillRect(p.x * TS + 6, p.y * TS - 5 + by, 4, 1); c.fillRect(p.x * TS + 7, p.y * TS - 4 + by, 2, 1);
-    }
-    // projectiles
-    for (const pr of this.projectiles) {
-      const k = Math.min(1, (t - pr.t0) / pr.dur);
-      const x = (pr.fx + (pr.tx - pr.fx) * k) * TS + 8, y = (pr.fy + (pr.ty - pr.fy) * k) * TS + 8 - Math.sin(k * Math.PI) * (pr.magic ? 2 : 6);
-      c.fillStyle = pr.color;
-      if (pr.magic) { c.fillRect(x - 2, y - 2, 4, 4); c.fillStyle = '#ffffff'; c.fillRect(x - 1, y - 1, 2, 2); c.globalAlpha = 0.5; c.fillStyle = pr.color; c.fillRect(x - 3 - (pr.tx - pr.fx) * 2, y - 1, 2, 2); c.globalAlpha = 1; }
-      else c.fillRect(x - 1, y - 1, 3, 2);
-    }
-
     // scale up
     const ctx = this.ctx;
     ctx.imageSmoothingEnabled = false;
@@ -220,6 +190,45 @@ export class CombatView {
     ctx.fillStyle = '#000';
     ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
     ctx.drawImage(this.low, sx, sy, this.W * S, this.H * S);
+
+    // Units, markers and projectiles are drawn at full resolution (in map-pixel units) so painted tokens stay sharp.
+    ctx.save();
+    ctx.setTransform(S, 0, 0, S, sx, sy);
+    ctx.imageSmoothingEnabled = false;
+    { const c = ctx;
+    // units: dead first, then sorted by y
+      const units = [...e.units].filter((u) => !u.fled).sort((a, b) => (a.dead ? -1 : 0) - (b.dead ? -1 : 0) || (this.pos.get(a.id).y - this.pos.get(b.id).y));
+      for (const u of units) this.drawUnit(c, u, t);
+
+      // target markers
+      for (const u of this.hl.targets) {
+        const p = this.pos.get(u.id);
+        c.strokeStyle = `rgba(255,70,70,${0.6 + Math.sin(t / 150) * 0.3})`;
+        c.lineWidth = 1;
+        c.strokeRect(p.x * TS + 0.5, p.y * TS + 0.5, TS - 1, TS - 1);
+        c.fillStyle = '#ff4646';
+        const by = Math.floor(Math.sin(t / 150) * 1.5);
+        c.fillRect(p.x * TS + 7, p.y * TS - 4 + by, 2, 2); c.fillRect(p.x * TS + 6, p.y * TS - 6 + by, 4, 2);
+      }
+      // current unit marker
+      const cur = e.current;
+      if (cur && !cur.dead) {
+        const p = this.pos.get(cur.id);
+        c.fillStyle = '#ffd84a';
+        const by = Math.floor(Math.sin(t / 180) * 1.5);
+        c.fillRect(p.x * TS + 6, p.y * TS - 5 + by, 4, 1); c.fillRect(p.x * TS + 7, p.y * TS - 4 + by, 2, 1);
+      }
+      // projectiles
+      for (const pr of this.projectiles) {
+        const k = Math.min(1, (t - pr.t0) / pr.dur);
+        const x = (pr.fx + (pr.tx - pr.fx) * k) * TS + 8, y = (pr.fy + (pr.ty - pr.fy) * k) * TS + 8 - Math.sin(k * Math.PI) * (pr.magic ? 2 : 6);
+        c.fillStyle = pr.color;
+        if (pr.magic) { c.fillRect(x - 2, y - 2, 4, 4); c.fillStyle = '#ffffff'; c.fillRect(x - 1, y - 1, 2, 2); c.globalAlpha = 0.5; c.fillStyle = pr.color; c.fillRect(x - 3 - (pr.tx - pr.fx) * 2, y - 1, 2, 2); c.globalAlpha = 1; }
+        else c.fillRect(x - 1, y - 1, 3, 2);
+      }
+
+    }
+    ctx.restore();
 
     // floating text (hi-res)
     ctx.textAlign = 'center';
@@ -270,8 +279,10 @@ export class CombatView {
       const frame = Math.floor((t + (u.id.length * 137)) / 450) % 2;
       const spr = spriteFor(u, u.st.held || u.st.stunned ? 0 : frame);
       const fl = this.flashes.get(u.id);
-      c.drawImage(spr, x - 1, y - 3);
-      if (fl && t - fl < 220) { c.globalAlpha = 0.7; c.globalCompositeOperation = 'source-atop'; c.globalCompositeOperation = 'source-over'; c.fillStyle = '#ffffff'; c.globalAlpha = 0.6 * (1 - (t - fl) / 220); c.fillRect(x + 1, y - 1, 14, 16); c.globalAlpha = 1; }
+      const art = artImage(unitArtKey(u));
+      if (art) this.drawToken(c, art, u, x, y, fl && t - fl < 220 ? 0.6 * (1 - (t - fl) / 220) : 0);
+      else c.drawImage(spr, x - 1, y - 3);
+      if (!art && fl && t - fl < 220) { c.globalAlpha = 0.7; c.globalCompositeOperation = 'source-atop'; c.globalCompositeOperation = 'source-over'; c.fillStyle = '#ffffff'; c.globalAlpha = 0.6 * (1 - (t - fl) / 220); c.fillRect(x + 1, y - 1, 14, 16); c.globalAlpha = 1; }
     }
     if (u.st.asleep || u.st.unconscious) { c.fillStyle = '#c8d8ff'; const z = Math.floor(t / 300) % 3; c.fillRect(x + 11 + z, y - 2 - z * 2, 3, 1); c.fillRect(x + 13 + z, y - 1 - z * 2, 1, 1); c.fillRect(x + 11 + z, y - z * 2, 3, 1); }
     // hp bar
@@ -291,7 +302,28 @@ export class CombatView {
     }
   }
 
+  // A round painted token, ringed in the side's colour, like a miniature on a tabletop map.
+  drawToken(c, img, u, x, y, flash = 0, down = false) {
+    const cx = x + 8, cy = y + 7, r = 7.2;
+    c.save();
+    c.beginPath(); c.arc(cx, cy, r, 0, Math.PI * 2); c.closePath();
+    c.save();
+    c.clip();
+    c.imageSmoothingEnabled = true;
+    if (down) c.filter = 'grayscale(1) brightness(0.7)';
+    const side = Math.min(img.naturalWidth, img.naturalHeight);
+    c.drawImage(img, (img.naturalWidth - side) / 2, (img.naturalHeight - side) / 2, side, side, cx - r, cy - r, r * 2, r * 2);
+    c.filter = 'none';
+    if (flash) { c.globalAlpha = flash; c.fillStyle = '#ffffff'; c.fillRect(cx - r, cy - r, r * 2, r * 2); c.globalAlpha = 1; }
+    c.restore();
+    c.lineWidth = 1.2; c.strokeStyle = '#1b1424'; c.stroke();
+    c.lineWidth = 0.7; c.strokeStyle = u.side === 'party' ? '#f2c84b' : '#e04848'; c.stroke();
+    c.restore();
+  }
+
   drawDown(c, u, x, y) {
+    const art = artImage(unitArtKey(u));
+    if (art) { this.drawToken(c, art, u, x, y, 0, true); return; }
     const spr = spriteFor(u, 0);
     c.save();
     c.translate(x + 8, y + 10);
