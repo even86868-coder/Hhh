@@ -1,6 +1,6 @@
 // Character voices. Recorded clips from the voice pack (voices/) play when available;
 // everything else uses the device's built-in speech synthesis (free, offline).
-import { lineKey, packVoice } from './voicekey.js';
+import { lineKey, packVoice, HERO_FALLBACK } from './voicekey.js';
 // To sound less robotic we (1) rank the installed voices and prefer the natural/neural
 // ones, (2) give each character a *different voice* instead of heavy pitch-shifting,
 // and (3) speak sentence by sentence with natural pauses.
@@ -33,8 +33,12 @@ if (typeof window !== 'undefined') loadVoicePack();
 
 function recordedClip(text, speaker) {
   if (!voiceSettings.recorded || !pack.keys.size) return null;
-  const key = lineKey(packVoice(speaker), text);
-  return pack.keys.has(key) ? `${pack.dir}/${key}.${pack.ext}` : null;
+  const pv = packVoice(speaker);
+  for (const v of HERO_FALLBACK[pv] || [pv]) {
+    const key = lineKey(v, text);
+    if (pack.keys.has(key)) return `${pack.dir}/${key}.${pack.ext}`;
+  }
+  return null;
 }
 let currentAudio = null;
 function playClip(url, gen) {

@@ -19,6 +19,8 @@ export const MONSTER_PACK = {
   goblinDog: 'beast', boar: 'beast', sinspawn: 'beast', yethHound: 'beast', reefclaw: 'beast',
   tsuto: 'tsuto', bruthazmus: 'bruthazmus', orik: 'orik', lyrie: 'lyrie', nualia: 'nualia', thug: 'thug', enforcer: 'thug',
 };
+// If a hero voice wasn't recorded, use the most similar one that was.
+export const HERO_FALLBACK = { hero_a: ['hero_a', 'hero_d', 'hero_b', 'hero_c'], hero_b: ['hero_b', 'hero_c', 'hero_a', 'hero_d'], hero_c: ['hero_c', 'hero_b', 'hero_a', 'hero_d'], hero_d: ['hero_d', 'hero_a', 'hero_c', 'hero_b'] };
 export function packVoice(speaker) {
   if (!speaker) return 'gm';
   if (speaker.kind === 'companion') return speaker.name;

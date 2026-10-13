@@ -28,12 +28,14 @@ Every fixed line in the game (combat reactions, party conversations, campfire ta
 
 Each character's voice and acting direction is set in `voices/cast.json`.
 
-**Generate it on GitHub (no setup on your computer):**
-1. Get an API key from [OpenAI](https://platform.openai.com/api-keys) (default) or ElevenLabs.
-2. In the repo: **Settings → Secrets and variables → Actions → New repository secret**, named `OPENAI_API_KEY` (or `ELEVENLABS_API_KEY`).
-3. **Actions → Generate voice pack → Run workflow**. Try a limit of 20 first to hear the casting, then run it again with no limit. It records only lines that don't have a clip yet, then commits them to `voices/clips/`.
+**Generate it on GitHub with ElevenLabs (no setup on your computer):**
+1. Create an ElevenLabs account and copy your API key (Profile → API Keys).
+2. In the repo: **Settings → Secrets and variables → Actions → New repository secret**, named `ELEVENLABS_API_KEY`.
+3. **Actions → Generate voice pack → Run workflow** with **cast only**. It picks a voice from your ElevenLabs account for every character and saves the choices in `voices/cast.json` (you can edit any of them to a voice name you like).
+4. Run it again with **record a sample (20 lines)** and listen to the clips in `voices/clips/`.
+5. Run it with **record everything missing**. If your monthly credits run out, it stops and keeps everything recorded so far; run it again next month to finish.
 
-**Or locally:** `node tools/generate-voices.mjs --dry-run` shows how many lines and characters will be recorded; `OPENAI_API_KEY=... node tools/generate-voices.mjs` records them.
+**Or locally:** `ELEVENLABS_API_KEY=... node tools/cast-voices.mjs` casts the voices, `node tools/generate-voices.mjs --dry-run` shows how many lines and characters will be recorded (and your remaining credits), and `ELEVENLABS_API_KEY=... node tools/generate-voices.mjs` records them. OpenAI also works: set `"provider": "openai"` in `voices/cast.json` and use `OPENAI_API_KEY`.
 
 When new story content adds lines, run it again: it only records what's new.
 

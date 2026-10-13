@@ -28,12 +28,25 @@ async function ttsOpenAI(line, v) {
   if (!res.ok) throw Object.assign(new Error(`OpenAI ${res.status}: ${(await res.text()).slice(0, 200)}`), { status: res.status });
   return Buffer.from(await res.arrayBuffer());
 }
+const EL_BASE = process.env.ELEVENLABS_BASE_URL || 'https://api.elevenlabs.io';
+let elVoices = null;
+async function elVoiceId(slot, voiceKey) {
+  if (!slot.elevenlabs) throw Object.assign(new Error(`No ElevenLabs voice set for "${voiceKey}". Run: node tools/cast-voices.mjs`), { status: 400, fatal: true });
+  if (/^[A-Za-z0-9]{18,}$/.test(slot.elevenlabs)) return slot.elevenlabs;
+  if (!elVoices) {
+    const r = await fetch(`${EL_BASE}/v1/voices`, { headers: { 'xi-api-key': process.env.ELEVENLABS_API_KEY } });
+    elVoices = r.ok ? (await r.json()).voices || [] : [];
+  }
+  const v = elVoices.find((x) => x.name.toLowerCase() === slot.elevenlabs.toLowerCase());
+  if (!v) throw Object.assign(new Error(`ElevenLabs voice "${slot.elevenlabs}" (for ${voiceKey}) not found in your account`), { status: 400, fatal: true });
+  return v.voice_id;
+}
 async function ttsElevenLabs(line, v) {
-  if (!v.elevenlabs) throw new Error(`No ElevenLabs voice ID set for "${line.voice}" in voices/cast.json`);
-  const res = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${v.elevenlabs}?output_format=${cast.elevenlabs.format}`, {
+  const id = await elVoiceId(v, line.voice);
+  const res = await fetch(`${EL_BASE}/v1/text-to-speech/${id}?output_format=${cast.elevenlabs.format}`, {
     method: 'POST',
-    headers: { 'xi-api-key': process.env.ELEVENLABS_API_KEY, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ text: line.text, model_id: cast.elevenlabs.model, voice_settings: { stability: 0.45, similarity_boost: 0.8 } }),
+    headers: { 'xi-api-key': process.env.ELEVENLABS_API_KEY, 'Content-Type': 'application/json', Accept: 'audio/mpeg' },
+    body: JSON.stringify({ text: line.text, model_id: cast.elevenlabs.model, voice_settings: { stability: 0.5, similarity_boost: 0.8, style: 0.3, use_speaker_boost: true, ...(v.settings || {}) } }),
   });
   if (!res.ok) throw Object.assign(new Error(`ElevenLabs ${res.status}: ${(await res.text()).slice(0, 200)}`), { status: res.status });
   return Buffer.from(await res.arrayBuffer());
@@ -46,13 +59,26 @@ function writeIndex() {
   return keys.length;
 }
 
-const all = collectLines().filter((l) => !onlyVoice || l.voice === onlyVoice);
-const todo = all.filter((l) => !existsSync(fileFor(l.key))).slice(0, limit);
+const all = collectLines({ heroVoices: cast.heroVoices }).filter((l) => !onlyVoice || l.voice === onlyVoice);
+const missing = all.filter((l) => !existsSync(fileFor(l.key)));
+const todo = missing.slice(0, limit);
 const chars = todo.reduce((s, l) => s + l.text.length, 0);
-console.log(`${all.length} lines in the game, ${all.length - todo.length} already recorded, ${todo.length} to record (${chars.toLocaleString()} characters) with ${provider}.`);
+console.log(`${all.length} lines in the game, ${all.length - missing.length} already recorded, ${todo.length} to record now (${chars.toLocaleString()} characters) with ${provider}.`);
 for (const l of todo) if (!cast.voices[l.voice]) { console.error(`No casting for voice "${l.voice}" in voices/cast.json`); process.exit(1); }
-if (dry) { console.log('Dry run: nothing generated.'); process.exit(0); }
 const keyVar = provider === 'elevenlabs' ? 'ELEVENLABS_API_KEY' : 'OPENAI_API_KEY';
+// ElevenLabs: compare the job with the credits left on the account.
+if (provider === 'elevenlabs' && process.env.ELEVENLABS_API_KEY) {
+  try {
+    const r = await fetch(`${EL_BASE}/v1/user/subscription`, { headers: { 'xi-api-key': process.env.ELEVENLABS_API_KEY } });
+    if (r.ok) {
+      const sub = await r.json();
+      const left = (sub.character_limit ?? 0) - (sub.character_count ?? 0);
+      console.log(`ElevenLabs plan "${sub.tier || '?'}": ${left.toLocaleString()} characters left this period; this run needs about ${chars.toLocaleString()}.`);
+      if (left < chars && !dry) console.log('Not enough credits for everything: it will record until the credits run out, then stop. Re-run later to continue where it left off.');
+    }
+  } catch (e) { /* informational only */ }
+}
+if (dry) { console.log('Dry run: nothing generated.'); process.exit(0); }
 if (!process.env[keyVar]) { console.error(`Set ${keyVar} first.`); process.exit(1); }
 
 let done = 0, failed = 0;
@@ -67,11 +93,12 @@ async function worker() {
         if (done % 25 === 0) console.log(`  ${done}/${todo.length}`);
         break;
       } catch (err) {
-        const retryable = !err.status || err.status === 429 || err.status >= 500;
+        const outOfCredits = err.status === 401 || err.status === 402 || /quota_exceeded|insufficient|credits/i.test(err.message);
+        const retryable = !err.fatal && !outOfCredits && (!err.status || err.status === 429 || err.status >= 500);
         if (retryable && attempt < 5) { await new Promise((r) => setTimeout(r, 1000 * 2 ** attempt)); continue; }
         failed++;
         console.error(`  failed [${line.voice}] "${line.text.slice(0, 50)}": ${err.message}`);
-        if (err.status === 401 || err.status === 403) { console.error('Authentication failed; stopping.'); queue.length = 0; }
+        if (err.fatal || outOfCredits || err.status === 403) { console.error(outOfCredits ? 'Out of credits or the key was rejected; stopping. Everything recorded so far is kept.' : 'Stopping.'); queue.length = 0; }
         break;
       }
     }

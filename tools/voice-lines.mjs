@@ -14,7 +14,7 @@ const PERSONALITIES = ['heroic', 'cheerful', 'grim', 'snarky'];
 const HERO_VOICES = ['hero_a', 'hero_b', 'hero_c', 'hero_d'];
 const PLAYER = '\u0000PLAYER\u0000'; // stand-in for the player's name: lines containing it are skipped
 
-export function collectLines() {
+export function collectLines({ heroVoices = HERO_VOICES } = {}) {
   const out = new Map();
   const add = (voice, text, source) => {
     if (!text || text.includes(PLAYER) || /\{\w+\}/.test(text)) return;
@@ -22,13 +22,13 @@ export function collectLines() {
     const key = lineKey(voice, t);
     if (!out.has(key)) out.set(key, { key, voice, text: t, source });
   };
-  const heroVoicesFor = (personality) => HERO_VOICES.map((v) => ({ v, personality }));
+  const heroVoicesFor = (personality) => heroVoices.map((v) => ({ v, personality }));
 
   // Combat barks. Tokens name an ally ({t}, {src}, {a}): expand with companion names.
   for (const [event, bySpeaker] of Object.entries(BARKS)) {
     for (const [speaker, lines] of Object.entries(bySpeaker)) {
       const isHero = PERSONALITIES.includes(speaker);
-      const voices = isHero ? HERO_VOICES : [speaker];
+      const voices = isHero ? heroVoices : [speaker];
       for (const line of lines) {
         const others = COMPANIONS.filter((n) => n !== speaker);
         const variants = /\{(t|src|a)\}/.test(line) ? others.map((n) => fill(line, { t: n, src: n, a: n })) : [line];
@@ -74,7 +74,9 @@ export function collectLines() {
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
-  const lines = collectLines();
+  const { readFileSync } = await import('fs');
+  const cast = JSON.parse(readFileSync('voices/cast.json', 'utf8'));
+  const lines = collectLines({ heroVoices: cast.heroVoices });
   const by = {};
   let chars = 0;
   for (const l of lines) { by[l.voice] = (by[l.voice] || 0) + 1; chars += l.text.length; }

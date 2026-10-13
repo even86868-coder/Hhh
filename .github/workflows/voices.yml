@@ -2,14 +2,23 @@ name: Generate voice pack
 on:
   workflow_dispatch:
     inputs:
-      provider:
-        description: 'Voice service (openai needs the OPENAI_API_KEY secret; elevenlabs needs ELEVENLABS_API_KEY and voice IDs in voices/cast.json)'
+      mode:
+        description: 'What to do'
         type: choice
-        options: [openai, elevenlabs]
-        default: openai
-      limit:
-        description: 'Max lines to record this run (leave empty for all; try 20 first to hear the casting)'
-        required: false
+        options:
+          - cast only (pick voices, record nothing)
+          - record a sample (20 lines)
+          - record everything missing
+        default: cast only (pick voices, record nothing)
+      recast:
+        description: 'Re-pick every voice from scratch (ElevenLabs)'
+        type: boolean
+        default: false
+      provider:
+        description: 'Voice service'
+        type: choice
+        options: [elevenlabs, openai]
+        default: elevenlabs
 permissions:
   contents: write
 concurrency:
@@ -18,23 +27,33 @@ concurrency:
 jobs:
   generate:
     runs-on: ubuntu-latest
+    env:
+      ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: Preview
+      - name: Check the API key secret
+        run: |
+          if [ "${{ inputs.provider }}" = "elevenlabs" ] && [ -z "$ELEVENLABS_API_KEY" ]; then echo "::error::Add a repository secret named ELEVENLABS_API_KEY (Settings > Secrets and variables > Actions)."; exit 1; fi
+          if [ "${{ inputs.provider }}" = "openai" ] && [ -z "$OPENAI_API_KEY" ]; then echo "::error::Add a repository secret named OPENAI_API_KEY."; exit 1; fi
+      - name: Cast voices (ElevenLabs)
+        if: inputs.provider == 'elevenlabs'
+        run: node tools/cast-voices.mjs ${{ inputs.recast && '--recast' || '' }}
+      - name: Preview the job
         run: node tools/generate-voices.mjs --dry-run --provider ${{ inputs.provider }}
-      - name: Record missing lines
-        env:
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
-        run: node tools/generate-voices.mjs --provider ${{ inputs.provider }} ${{ inputs.limit && format('--limit {0}', inputs.limit) || '' }}
-      - name: Commit the voice pack
+      - name: Record
+        if: "!startsWith(inputs.mode, 'cast only')"
+        run: node tools/generate-voices.mjs --provider ${{ inputs.provider }} ${{ startsWith(inputs.mode, 'record a sample') && '--limit 20' || '' }}
+      - name: Commit casting and clips
+        if: always()
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898283+github-actions[bot]@users.noreply.github.com"
           git add voices
-          if git diff --cached --quiet; then echo "No new clips."; exit 0; fi
-          git commit -m "Update recorded voice pack"
-          git push
+          if git diff --cached --quiet; then echo "Nothing new to commit."; exit 0; fi
+          git commit -m "Update voice pack (${{ inputs.mode }})"
+          git pull --rebase origin "${GITHUB_REF_NAME}" || true
+          git push origin "HEAD:${GITHUB_REF_NAME}"
