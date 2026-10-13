@@ -42,16 +42,54 @@ async function elVoiceId(slot, voiceKey) {
   return v.voice_id;
 }
 const isNarration = (line) => line.source.startsWith('story:');
-const elModel = (line) => (isNarration(line) && cast.elevenlabs.narrationModel) || cast.elevenlabs.model;
+const rejected = new Set(); // models this account refused; their fallback is used instead
+const fallbackFor = (m) => (cast.elevenlabs.fallback || {})[m];
+const elModel = (line) => {
+  let m = (isNarration(line) && cast.elevenlabs.narrationModel) || cast.elevenlabs.model;
+  while (rejected.has(m) && fallbackFor(m)) m = fallbackFor(m);
+  return m;
+};
 const credits = (lines) => Math.round(lines.reduce((sum, l) => sum + l.text.length * ((cast.elevenlabs.creditsPerChar || {})[elModel(l)] ?? 1), 0));
+// Audio tags ([excited], [whispers]...) are acted out by Eleven v3/v4 and read aloud by older models,
+// so they're only added for tag-aware models. They never change a line's key or its text in the game.
+const tagAware = (model) => /^eleven_v[3-9]/.test(model);
+function performedText(line, model) {
+  const t = cast.elevenlabs.tags;
+  if (!t?.enabled || !tagAware(model) || /^\[/.test(line.text)) return line.text;
+  const bySource = t.source || {};
+  const tag = bySource[line.source] ?? Object.entries(bySource).find(([k]) => k.endsWith(':') && line.source.startsWith(k))?.[1] ?? (t.voice || {})[line.voice];
+  return tag ? `${tag} ${line.text}` : line.text;
+}
+function voiceSettings(v, model) {
+  const s = { stability: 0.5, similarity_boost: 0.8, style: 0.3, use_speaker_boost: true, ...(v.settings || {}) };
+  if (tagAware(model)) delete s.style; // Eleven v3/v4 have no style setting
+  return s;
+}
+let noSettings = false; // set if the model rejects our voice settings
 async function ttsElevenLabs(line, v) {
   const id = await elVoiceId(v, line.voice);
+  const model = elModel(line);
+  const body = { text: performedText(line, model), model_id: model };
+  if (!noSettings) body.voice_settings = voiceSettings(v, model);
   const res = await fetch(`${EL_BASE}/v1/text-to-speech/${id}?output_format=${cast.elevenlabs.format}`, {
     method: 'POST',
     headers: { 'xi-api-key': process.env.ELEVENLABS_API_KEY, 'Content-Type': 'application/json', Accept: 'audio/mpeg' },
-    body: JSON.stringify({ text: line.text, model_id: elModel(line), voice_settings: { stability: 0.5, similarity_boost: 0.8, style: 0.3, use_speaker_boost: true, ...(v.settings || {}) } }),
+    body: JSON.stringify(body),
   });
-  if (!res.ok) throw Object.assign(new Error(`ElevenLabs ${res.status}: ${(await res.text()).slice(0, 200)}`), { status: res.status });
+  if (!res.ok) {
+    const msg = (await res.text()).slice(0, 300);
+    if ((res.status === 400 || res.status === 404 || res.status === 422) && /model/i.test(msg) && fallbackFor(model)) {
+      if (!rejected.has(model)) console.log(`  ElevenLabs rejected model ${model} (${res.status}: ${msg.slice(0, 120)}); using ${fallbackFor(model)} instead.`);
+      rejected.add(model);
+      return ttsElevenLabs(line, v);
+    }
+    if ((res.status === 400 || res.status === 422) && /voice_settings|stability|similarity|speaker_boost/i.test(msg) && body.voice_settings) {
+      if (!noSettings) console.log(`  ElevenLabs rejected the voice settings for ${model}; recording with the voices' default settings.`);
+      noSettings = true;
+      return ttsElevenLabs(line, v);
+    }
+    throw Object.assign(new Error(`ElevenLabs ${res.status}: ${msg.slice(0, 200)}`), { status: res.status });
+  }
   return Buffer.from(await res.arrayBuffer());
 }
 const tts = provider === 'elevenlabs' ? ttsElevenLabs : ttsOpenAI;
@@ -116,5 +154,6 @@ async function worker() {
 }
 await Promise.all(Array.from({ length: provider === 'elevenlabs' ? 2 : 4 }, worker));
 const total = writeIndex();
+if (rejected.size) console.log(`Note: your account didn't accept ${[...rejected].join(', ')}, so ${[...rejected].map(fallbackFor).join(', ')} was used.`);
 console.log(`Recorded ${done}, failed ${failed}. Voice pack now has ${total} clips (voices/index.json updated).`);
 process.exit(failed && !done ? 1 : 0);

@@ -1,17 +1,51 @@
 {
-  "_readme": "Voice casting for the recorded voice pack. For ElevenLabs, 'elevenlabs' can be a voice name from your ElevenLabs account (e.g. \"George\") or a voice ID; leave it empty and tools/cast-voices.mjs picks one using 'want'. 'settings' are ElevenLabs voice settings (lower stability = more expressive). 'direction' is used by OpenAI only. 'heroVoices' lists the hero voices to record: 2 halves the pack; the game shares recordings between similar hero voices. 'want.avoid' lists traits to steer away from when auto-casting. Story narration (lines from story scenes) uses elevenlabs.narrationModel; everything else uses elevenlabs.model.",
+  "_readme": "Voice casting for the recorded voice pack. For ElevenLabs, 'elevenlabs' can be a voice name from your ElevenLabs account (e.g. \"George\") or a voice ID; leave it empty and tools/cast-voices.mjs picks one using 'want'. 'settings' are ElevenLabs voice settings (lower stability = more expressive; 'style' is only sent to older models, Eleven v4 ignores it). 'direction' is used by OpenAI only. 'heroVoices' lists the hero voices to record: 2 halves the pack; the game shares recordings between similar hero voices. 'want.avoid' lists traits to steer away from when auto-casting. Story narration (lines from story scenes) uses elevenlabs.narrationModel; everything else uses elevenlabs.model. If your account rejects a model, elevenlabs.fallback names the one to use instead. elevenlabs.tags adds Eleven v4 audio tags (like [excited]) in front of lines, by line type ('source', e.g. bark:crit; a key ending in ':' matches every line of that kind) or by voice ('voice'); the tags only change how a line is performed, never its text in the game.",
   "provider": "elevenlabs",
   "heroVoices": [
     "hero_a",
     "hero_b"
   ],
   "elevenlabs": {
-    "model": "eleven_multilingual_v2",
-    "narrationModel": "eleven_flash_v2_5",
+    "model": "eleven_v4",
+    "narrationModel": "eleven_v4_turbo",
     "format": "mp3_44100_64",
     "creditsPerChar": {
+      "eleven_v4": 1,
+      "eleven_v4_turbo": 0.5,
       "eleven_multilingual_v2": 1,
       "eleven_flash_v2_5": 0.5
+    },
+    "fallback": {
+      "eleven_v4": "eleven_multilingual_v2",
+      "eleven_v4_turbo": "eleven_flash_v2_5"
+    },
+    "tags": {
+      "enabled": true,
+      "source": {
+        "bark:start": "[determined]",
+        "bark:crit": "[excited]",
+        "bark:allyCrit": "[impressed]",
+        "bark:kill": "[triumphant]",
+        "bark:allyDown": "[shouting]",
+        "bark:lowHp": "[strained]",
+        "bark:fumble": "[frustrated]",
+        "bark:healedBy": "[relieved]",
+        "bark:revived": "[gasps]",
+        "bark:victory": "[laughs]",
+        "gm:start": "[dramatic]",
+        "monster:goblin": "[cackling]",
+        "monster:goblinArcher": "[cackling]",
+        "monster:warchanter": "[sings]",
+        "monster:goblinDog": "[growls]",
+        "monster:boar": "[growls]",
+        "monster:yethHound": "[growls]",
+        "monster:sinspawn": "[growls]",
+        "monster:reefclaw": "[growls]",
+        "monster:erylium": "[giggles]",
+        "monster:ripnugget": "[shouting]",
+        "monster:nualia": "[menacing]"
+      },
+      "voice": {}
     }
   },
   "openai": {
