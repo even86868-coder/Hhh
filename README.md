@@ -22,6 +22,21 @@ A cute pixel-art phone game retelling **Chapter 1 (Burnt Offerings)** of the *Ri
 
 Want an App Store or Play Store build? The game is static HTML/JS, so it can be wrapped as-is with [Capacitor](https://capacitorjs.com/) (`npx cap init`, set `webDir` to this folder, `npx cap add ios` / `android`).
 
+## Recorded voice pack
+
+Every fixed line in the game (combat reactions, party conversations, campfire talks, Game Master lines, story narration) can be recorded as an audio file with an AI voice service, so characters sound like voice actors instead of text-to-speech. The game plays a recording when one exists and uses the device's built-in voices for everything else (for example, lines that say your hero's name, live AI banter, and skill-check numbers).
+
+Each character's voice and acting direction is set in `voices/cast.json`.
+
+**Generate it on GitHub (no setup on your computer):**
+1. Get an API key from [OpenAI](https://platform.openai.com/api-keys) (default) or ElevenLabs.
+2. In the repo: **Settings → Secrets and variables → Actions → New repository secret**, named `OPENAI_API_KEY` (or `ELEVENLABS_API_KEY`).
+3. **Actions → Generate voice pack → Run workflow**. Try a limit of 20 first to hear the casting, then run it again with no limit. It records only lines that don't have a clip yet, then commits them to `voices/clips/`.
+
+**Or locally:** `node tools/generate-voices.mjs --dry-run` shows how many lines and characters will be recorded; `OPENAI_API_KEY=... node tools/generate-voices.mjs` records them.
+
+When new story content adds lines, run it again: it only records what's new.
+
 ## Play on your PC
 
 Every push to `main` builds the PC versions automatically and publishes them on the repo's **Releases** page (https://github.com/even86868-coder/Hhh/releases/latest):

@@ -110,6 +110,28 @@ export const MONSTERS = {
     spells: { divineFavor: 1, cureModerate: 2, inflictLight: 2 }, caster: { cl: 4, mod: 2, concentration: 10 },
     ai: 'melee', xp: 1600, boss: true,
   },
+  thug: {
+    name: 'Sczarni Thug', sprite: 'thug', size: 'M', type: 'humanoid', subtypes: ['human'], evil: false,
+    hd: 2, hp: 15, abil: { str: 15, dex: 13, con: 14, int: 9, wis: 10, cha: 8 },
+    ac: { armor: 3 }, bab: 2, saves: { fort: 5, ref: 1, will: 0 }, init: 1, speed: 30,
+    melee: [A('club', 'Club', 4, '1d6', 2)],
+    ranged: [A('dagger', 'Thrown dagger', 3, '1d4', 2, 19, 2, { range: 10 })],
+    ai: 'melee', xp: 400,
+  },
+  enforcer: {
+    name: 'Sczarni Enforcer', sprite: 'enforcer', size: 'M', type: 'humanoid', subtypes: ['human'], evil: true,
+    hd: 3, hp: 22, abil: { str: 12, dex: 17, con: 13, int: 12, wis: 10, cha: 13 },
+    ac: { armor: 3 }, bab: 2, saves: { fort: 2, ref: 6, will: 1 }, init: 7, speed: 30,
+    melee: [A('shortsword', 'Short sword', 6, '1d6', 1, 19)],
+    sneak: 2, evasion: true, ai: 'melee', xp: 800, boss: true,
+  },
+  reefclaw: {
+    name: 'Reefclaw', sprite: 'reefclaw', size: 'S', type: 'aberration', subtypes: ['aquatic'], evil: false,
+    hd: 1, hp: 13, abil: { str: 13, dex: 14, con: 15, int: 2, wis: 13, cha: 6 },
+    ac: { natural: 3 }, bab: 1, saves: { fort: 4, ref: 4, will: 3 }, init: 2, speed: 20,
+    melee: [A('claw', 'Claw', 4, '1d4', 1, 20, 2, { effect: 'poisonDex' })],
+    ai: 'melee', xp: 400,
+  },
   yethHound: {
     name: 'Yeth Hound', sprite: 'yethHound', size: 'M', type: 'outsider', subtypes: ['evil'], evil: true,
     hd: 3, hp: 22, abil: { str: 17, dex: 15, con: 15, int: 6, wis: 12, cha: 10 },

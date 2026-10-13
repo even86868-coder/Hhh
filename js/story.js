@@ -2,6 +2,10 @@
 // Text tokens: {name} player, {tank} {healer} {arcane} {skirm} companions by role (with fallback), {c0} {c1} {c2}.
 // Checks: { skill, dc, who: 'player' | 'party', bonus?(state) }
 
+import * as SANDPOINT from './story_sandpoint.js';
+import * as COMPANIONS from './story_companions.js';
+import * as THISTLETOP from './story_thistletop.js';
+
 const has = (f) => (s) => !!s.flags[f];
 const not = (f) => (s) => !s.flags[f];
 
@@ -213,7 +217,13 @@ export const STORY = {
     text: (s) => `${s.flags.tsutoCaptured ? 'Tsuto glares in silence as you search.' : 'Tsuto lies bloodied but breathing. You tie him up for the sheriff.'} In his desk you find a journal, and it's horrifying.\n\nThe goblin raid was a distraction so goblins could steal Father Tobyn's bones. Tsuto writes rapturously about Nualia, ${s.flags.nualiaHint ? 'Tobyn\'s foundling, very much alive,' : 'a silver-haired woman,'} now risen in the service of Lamashtu. She means to burn Sandpoint to the ground as an offering, and to wake "what sleeps beneath Thistletop."\n\nThe journal mentions a tunnel under the Glassworks, leading to "the catacombs of wrath."`,
     on: [{ set: { journal: true } }, { gold: 150 }, { gear: { key: 'resistance', val: 1 } }],
     levelUp: 3, rest: true,
-    choices: [{ t: 'Rest, then take the tunnel down.', go: 'catacombs' }],
+    choices: [{ t: 'Rest for the night.', go: 'evening' }],
+  },
+
+  evening: {
+    scene: 'night', chapter: 'The Glassworks',
+    text: (s) => `Night settles over Sandpoint. ${s.flags.tsutoCaptured ? 'Tsuto sits in Sheriff Hemlock\'s jail, refusing to speak.' : 'Tsuto lies in the sheriff\'s jail, bandaged and silent.'} The tunnel beneath the Glassworks waits, but there are still a few hours before you need to sleep.`,
+    choices: [{ t: 'Sleep, then descend into the tunnel at dawn.', go: 'catacombs' }],
   },
 
   // ------------------------------------------------------------ Catacombs of Wrath
@@ -389,3 +399,20 @@ export const STORY = {
     choices: [{ t: 'Return to title', go: '__title' }],
   },
 };
+
+// ------------------------------------------------------------ expansion modules
+// Merge extra nodes, then attach hook choices to their host nodes (before the host's last choice).
+for (const mod of [SANDPOINT, COMPANIONS, THISTLETOP]) {
+  for (const [id, node] of Object.entries(mod.NODES || {})) {
+    if (STORY[id]) console.warn('Story node id clash:', id);
+    else STORY[id] = node;
+  }
+  for (const [host, extra] of Object.entries(mod.HOOKS || {})) {
+    const node = STORY[host];
+    if (!node) { console.warn('Hook host missing:', host); continue; }
+    const list = node.choices || (node.choices = []);
+    list.splice(Math.max(0, list.length - 1), 0, ...extra);
+  }
+}
+export const EXTRA_SCENES = Object.assign({}, SANDPOINT.SCENES, COMPANIONS.SCENES, THISTLETOP.SCENES);
+export const EXTRA_CAMP = [...(SANDPOINT.CAMP || []), ...(COMPANIONS.CAMP || []), ...(THISTLETOP.CAMP || [])];

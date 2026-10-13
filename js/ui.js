@@ -12,7 +12,7 @@ import { CombatView } from './render.js';
 import { SPELLS } from './spells.js';
 import { sfx, playMusic, stopMusic, settings as audioSettings, unlockAudio } from './audio.js';
 import { PERSONALITIES, DEFAULT_PERSONALITY } from './dialogue.js';
-import { speak, stopVoices, voiceSettings, VOICE_PRESETS, voiceAvailable, castList, setCast, listVoices } from './voice.js';
+import { speak, stopVoices, voiceSettings, VOICE_PRESETS, voiceAvailable, castList, setCast, listVoices, voicePackSize } from './voice.js';
 import { gmSettings, sceneIntro, stageDirection, explainCheck, explainResult, GMCommentator } from './gm.js';
 import { aiSettings, AI_MODELS, getApiKey, setApiKey, testConnection, aiReady } from './aibanter.js';
 import { talkSettings, sceneLines, campLines, aiSceneLines, speakerOf, Barker } from './talk.js';
@@ -190,6 +190,7 @@ function showSettings() {
       voiceAvailable() ? h('label', { class: 'row' }, 'Character voices', btn(voiceSettings.enabled ? 'On' : 'Off', () => { voiceSettings.enabled = !voiceSettings.enabled; if (!voiceSettings.enabled) stopVoices(); savePrefs(); render(); })) : h('p', { class: 'hint' }, 'Voices are not supported on this device.'),
       h('label', { class: 'row' }, 'Game Master', btn({ full: 'Full', tips: 'Rules tips only', off: 'Off' }[voiceSettings.gm || 'full'], () => { voiceSettings.gm = { full: 'tips', tips: 'off', off: 'full' }[voiceSettings.gm || 'full']; gmSettings.mode = voiceSettings.gm; savePrefs(); render(); })),
       voiceAvailable() ? h('label', { class: 'row' }, 'GM reads the story aloud', btn(voiceSettings.narrator ? 'On' : 'Off', () => { voiceSettings.narrator = !voiceSettings.narrator; savePrefs(); render(); })) : null,
+      voicePackSize() ? h('label', { class: 'row' }, `Recorded voices (${voicePackSize()} lines)`, btn(voiceSettings.recorded ? 'On' : 'Off', () => { voiceSettings.recorded = !voiceSettings.recorded; savePrefs(); render(); })) : null,
       voiceAvailable() ? h('label', { class: 'row' }, 'Voice casting', btn('Choose voices', () => { document.querySelector('.modal')?.remove(); showCasting(); })) : null,
       voiceAvailable() ? h('label', { class: 'row' }, 'Voice volume', btn(`${Math.round(voiceSettings.volume * 100)}%`, () => { voiceSettings.volume = voiceSettings.volume >= 1 ? 0.25 : Math.round((voiceSettings.volume + 0.25) * 100) / 100; savePrefs(); speak('Like this?', { kind: 'companion', name: 'Pip' }, { queue: false }); render(); })) : null,
       h('label', { class: 'row' }, 'Live AI banter', btn(aiSettings.enabled && getApiKey() ? 'On' : 'Set up', () => { document.querySelector('.modal')?.remove(); showAiSettings(); })),
@@ -596,6 +597,7 @@ let storyAutoHook = null;
 
 export function enterNode(id, { resume = false } = {}) {
   if (id === '__title') { save(); showTitle(); return; }
+  if (id === '__return') { id = G.state.returnTo || 'day2'; G.state.returnTo = null; }
   const node = STORY[id];
   if (!node) { console.error('Missing node', id); return; }
   G.state.node = id;
@@ -739,6 +741,7 @@ function typewrite(el, text, done) {
 
 function choose(node, ch, choicesEl) {
   if (ch.set) Object.assign(G.state.flags, ch.set);
+  if (ch.ret) G.state.returnTo = ch.ret;
   const notes = applyEffects(ch.fx);
   if (notes.length) toast(notes.join(' · '));
   if (!ch.check) { G.state.lastWho = player().name; enterNode(ch.go); return; }

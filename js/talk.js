@@ -32,7 +32,8 @@ export function sceneLines(nodeId, state) { return SCENES[nodeId] ? resolveLines
 export function campLines(state) {
   state.flags.campSeen = state.flags.campSeen || [];
   const roles = new Set(state.party.filter((c) => !c.isPlayer).map((c) => c.role));
-  const ok = CAMP.map((conv, i) => ({ conv, i })).filter(({ conv, i }) => !state.flags.campSeen.includes(i) && conv.every((l) => l.who === 'hero' || roles.has(l.who)));
+  const ok = CAMP.map((c, i) => ({ conv: Array.isArray(c) ? c : c.lines, cond: Array.isArray(c) ? null : c.if, i }))
+    .filter(({ conv, cond, i }) => !state.flags.campSeen.includes(i) && (!cond || cond(state)) && conv.every((l) => l.who === 'hero' || roles.has(l.who)));
   if (!ok.length) return [];
   const { conv, i } = ok[Math.floor(Math.random() * ok.length)];
   state.flags.campSeen.push(i);

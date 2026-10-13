@@ -14,7 +14,9 @@
     "standalone": "node tools/build-standalone.mjs",
     "dist:win": "electron-builder --win",
     "dist:mac": "electron-builder --mac",
-    "dist:linux": "electron-builder --linux"
+    "dist:linux": "electron-builder --linux",
+    "voices": "node tools/generate-voices.mjs",
+    "voices:dry": "node tools/generate-voices.mjs --dry-run"
   },
   "devDependencies": {
     "@anthropic-ai/sdk": "^0.128.0",
@@ -35,7 +37,8 @@
       "css/**",
       "js/**",
       "icons/**",
-      "desktop/**"
+      "desktop/**",
+      "voices/**"
     ],
     "icon": "icons/icon-512.png",
     "win": {

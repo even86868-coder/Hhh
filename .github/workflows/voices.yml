@@ -1,0 +1,40 @@
+name: Generate voice pack
+on:
+  workflow_dispatch:
+    inputs:
+      provider:
+        description: 'Voice service (openai needs the OPENAI_API_KEY secret; elevenlabs needs ELEVENLABS_API_KEY and voice IDs in voices/cast.json)'
+        type: choice
+        options: [openai, elevenlabs]
+        default: openai
+      limit:
+        description: 'Max lines to record this run (leave empty for all; try 20 first to hear the casting)'
+        required: false
+permissions:
+  contents: write
+concurrency:
+  group: voices-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Preview
+        run: node tools/generate-voices.mjs --dry-run --provider ${{ inputs.provider }}
+      - name: Record missing lines
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
+        run: node tools/generate-voices.mjs --provider ${{ inputs.provider }} ${{ inputs.limit && format('--limit {0}', inputs.limit) || '' }}
+      - name: Commit the voice pack
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898283+github-actions[bot]@users.noreply.github.com"
+          git add voices
+          if git diff --cached --quiet; then echo "No new clips."; exit 0; fi
+          git commit -m "Update recorded voice pack"
+          git push

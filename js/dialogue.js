@@ -299,6 +299,18 @@ export const CAMP = [
   [{ who: 'healer', text: 'The Dawnflower teaches that even the darkest soul can be redeemed.' }, { who: 'hero', text: H('I hope she\'s right.', 'That\'s a nice thought!', 'Some can\'t.', 'Even goblins? Even Pip?') }, { who: 'skirm', text: 'Hey!' }],
 ];
 
+// ------------------------------------------------------------ merge expansion content
+import { BARKS_MORE, MONSTER_BARKS_MORE, SCENES_MORE, CAMP_MORE } from './dialogue_more.js';
+import { EXTRA_SCENES, EXTRA_CAMP } from './story.js';
+for (const [ev, bySpeaker] of Object.entries(BARKS_MORE)) {
+  BARKS[ev] = BARKS[ev] || {};
+  for (const [sp, lines] of Object.entries(bySpeaker)) BARKS[ev][sp] = [...(BARKS[ev][sp] || []), ...lines];
+}
+for (const [k, lines] of Object.entries(MONSTER_BARKS_MORE)) MONSTER_BARKS[k] = [...(MONSTER_BARKS[k] || []), ...lines];
+for (const src of [SCENES_MORE, EXTRA_SCENES]) for (const [id, lines] of Object.entries(src)) SCENES[id] = [...(SCENES[id] || []), ...lines];
+// Campfire talks: plain arrays, or { if(state), lines } for conditional ones.
+for (const c of [...CAMP_MORE, ...EXTRA_CAMP]) CAMP.push(c);
+
 // The hero personality picked by AI for the watch mode, by class.
 export const DEFAULT_PERSONALITY = { fighter: 'heroic', barbarian: 'grim', paladin: 'heroic', ranger: 'grim', rogue: 'snarky', cleric: 'cheerful', wizard: 'cheerful', sorcerer: 'snarky' };
 
@@ -307,7 +319,7 @@ export function countLines() {
   for (const ev of Object.values(BARKS)) for (const l of Object.values(ev)) n += l.length;
   for (const l of Object.values(MONSTER_BARKS)) n += l.length;
   for (const sc of Object.values(SCENES)) for (const l of sc) n += typeof l.text === 'string' ? 1 : 4;
-  for (const c of CAMP) for (const l of c) n += typeof l.text === 'string' ? 1 : 4;
+  for (const c of CAMP) for (const l of (Array.isArray(c) ? c : c.lines)) n += typeof l.text === 'string' ? 1 : 4;
   return n;
 }
 

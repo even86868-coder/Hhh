@@ -1,4 +1,6 @@
-// Character voices via the device's built-in speech synthesis (free, offline).
+// Character voices. Recorded clips from the voice pack (voices/) play when available;
+// everything else uses the device's built-in speech synthesis (free, offline).
+import { lineKey, packVoice } from './voicekey.js';
 // To sound less robotic we (1) rank the installed voices and prefer the natural/neural
 // ones, (2) give each character a *different voice* instead of heavy pitch-shifting,
 // and (3) speak sentence by sentence with natural pauses.
@@ -8,7 +10,47 @@ export const voiceSettings = {
   gm: 'full', // Game Master commentary: 'full' | 'tips' | 'off'
   volume: 0.9,
   cast: {}, // user overrides: speaker key -> voiceURI
+  recorded: true, // use the recorded voice pack when present
 };
+
+// ---------------------------------------------------------------- recorded voice pack
+const pack = { keys: new Set(), dir: 'voices/clips', ext: 'mp3', loaded: false };
+export const voicePackSize = () => pack.keys.size;
+export async function loadVoicePack() {
+  if (typeof fetch === 'undefined' || typeof location === 'undefined' || !/^(https?|app):$/.test(location.protocol)) return 0;
+  try {
+    const res = await fetch('voices/index.json', { cache: 'no-cache' });
+    if (!res.ok) return 0;
+    const j = await res.json();
+    pack.keys = new Set(j.keys || []);
+    pack.dir = `voices/${j.dir || 'clips'}`;
+    pack.ext = j.ext || 'mp3';
+    pack.loaded = true;
+  } catch (e) { /* no pack: device voices only */ }
+  return pack.keys.size;
+}
+if (typeof window !== 'undefined') loadVoicePack();
+
+function recordedClip(text, speaker) {
+  if (!voiceSettings.recorded || !pack.keys.size) return null;
+  const key = lineKey(packVoice(speaker), text);
+  return pack.keys.has(key) ? `${pack.dir}/${key}.${pack.ext}` : null;
+}
+let currentAudio = null;
+function playClip(url, gen) {
+  return new Promise((done) => {
+    if (gen !== generation) { done(true); return; }
+    const a = new Audio(url);
+    currentAudio = a;
+    a.volume = voiceSettings.volume;
+    let finished = false;
+    const fin = (ok) => { if (!finished) { finished = true; if (currentAudio === a) currentAudio = null; done(ok); } };
+    a.onended = () => fin(true);
+    a.onerror = () => fin(false);
+    a.play().catch(() => fin(false));
+    setTimeout(() => fin(true), 30000);
+  });
+}
 
 export const VOICE_PRESETS = {
   deep: { name: 'Deep', pitch: 0.8, rate: 0.92, pref: 'm' },
@@ -141,15 +183,21 @@ function utter(text, prof, voice, gen) {
 
 // Speak a line. Returns a promise that resolves when finished (or skipped).
 export function speak(text, speaker = { kind: 'gm' }, { queue = true } = {}) {
-  if (!synth || !voiceSettings.enabled || !text) return Promise.resolve();
+  if (!voiceSettings.enabled || !text) return Promise.resolve();
   if (speaker.kind === 'narrator' && !voiceSettings.narrator) return Promise.resolve();
   if (!queue) stopVoices();
-  if (!voices.length) loadVoices();
-  if (!voices.length) return Promise.resolve(); // no installed voices (e.g. some Linux setups)
+  if (synth && !voices.length) loadVoices();
+  const clip = recordedClip(text, speaker);
+  const canSynth = !!synth && voices.length > 0;
+  if (!clip && !canSynth) return Promise.resolve(); // nothing can speak (e.g. some Linux setups)
   const gen = generation;
   const prof = resolve(speaker);
-  const voice = voiceFor(prof.key);
-  const run = async () => { for (const c of chunks(text)) { if (gen !== generation) return; await utter(c, prof, voice, gen); } };
+  const run = async () => {
+    if (clip && (await playClip(clip, gen))) return;
+    if (!canSynth) return;
+    const voice = voiceFor(prof.key);
+    for (const c of chunks(text)) { if (gen !== generation) return; await utter(c, prof, voice, gen); }
+  };
   chain = chain.then(run);
   return chain;
 }
@@ -158,6 +206,7 @@ export function stopVoices() {
   generation += 1;
   chain = Promise.resolve();
   try { synth?.cancel(); } catch (e) { /* ignore */ }
+  if (currentAudio) { try { currentAudio.pause(); } catch (e) { /* ignore */ } currentAudio = null; }
 }
 
-export function isSpeaking() { return !!synth?.speaking; }
+export function isSpeaking() { return !!synth?.speaking || !!currentAudio; }

@@ -1,0 +1,27 @@
+{
+  "_readme": "Voice casting for the recorded voice pack. provider: 'openai' (needs OPENAI_API_KEY) or 'elevenlabs' (needs ELEVENLABS_API_KEY; replace each voice with an ElevenLabs voice ID). 'direction' is acting guidance sent with each line (OpenAI only).",
+  "provider": "openai",
+  "openai": { "model": "gpt-4o-mini-tts", "format": "mp3" },
+  "elevenlabs": { "model": "eleven_multilingual_v2", "format": "mp3_44100_64" },
+  "voices": {
+    "gm": { "openai": "fable", "elevenlabs": "", "direction": "A warm, wise fantasy storyteller and game master. Unhurried, gently dramatic, a twinkle of humor." },
+    "Brannoc": { "openai": "onyx", "elevenlabs": "", "direction": "A gruff, laconic veteran soldier. Low, gravelly, few words, dry humor, protective." },
+    "Tamsin": { "openai": "coral", "elevenlabs": "", "direction": "A warm, kind young priestess. Gentle but firm, scolds with affection, brave." },
+    "Quillan": { "openai": "ash", "elevenlabs": "", "direction": "An excitable, talkative elven scholar. Quick, enthusiastic, slightly nasal, loves big words." },
+    "Pip": { "openai": "nova", "elevenlabs": "", "direction": "A cheeky, playful halfling thief. Bright, quick, mischievous, always joking." },
+    "hero_a": { "openai": "verse", "elevenlabs": "", "direction": "A brave adventurer with a deep, steady voice." },
+    "hero_b": { "openai": "shimmer", "elevenlabs": "", "direction": "A brave adventurer with a warm, confident voice." },
+    "hero_c": { "openai": "sage", "elevenlabs": "", "direction": "A brave adventurer with a bright, lively voice." },
+    "hero_d": { "openai": "ballad", "elevenlabs": "", "direction": "A brave young adventurer with a high, eager voice." },
+    "goblin": { "openai": "echo", "elevenlabs": "", "direction": "A silly, screechy, gleefully menacing little goblin. Fast, high, cackling, sing-song." },
+    "ripnugget": { "openai": "echo", "elevenlabs": "", "direction": "A pompous goblin chieftain, shrill and boastful, shouting." },
+    "erylium": { "openai": "ballad", "elevenlabs": "", "direction": "A tiny, giggling, wicked imp demon. Hissing, high, gleeful." },
+    "beast": { "openai": "onyx", "elevenlabs": "", "direction": "A snarling monster. Growl and hiss the words." },
+    "tsuto": { "openai": "ash", "elevenlabs": "", "direction": "A bitter, arrogant young man. Cold, sneering, wounded pride." },
+    "bruthazmus": { "openai": "onyx", "elevenlabs": "", "direction": "A hulking, mocking bugbear hunter. Deep, slow, menacing laughter." },
+    "orik": { "openai": "verse", "elevenlabs": "", "direction": "A calm professional mercenary. Matter-of-fact, unbothered." },
+    "lyrie": { "openai": "shimmer", "elevenlabs": "", "direction": "An impatient, condescending scholar-wizard. Clipped and irritated." },
+    "nualia": { "openai": "sage", "elevenlabs": "", "direction": "A tragic, furious fallen priestess. Intense, haunted, venomous." },
+    "thug": { "openai": "verse", "elevenlabs": "", "direction": "A rough street thug. Threatening, swaggering." }
+  }
+}

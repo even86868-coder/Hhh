@@ -5,7 +5,7 @@ import { aiTurn } from '../js/ai.js';
 import { buildEncounter, ENCOUNTERS } from '../js/maps.js';
 import { setRng, seeded } from '../js/dice.js';
 
-const LEVELS = { festival: 1, aldern: 1, cathedral: 1, boar: 2, glassworks: 2, tsuto: 2, sinspawn: 3, erylium: 3, nettlewood: 3, bridge: 4, bruthazmus: 4, ripnugget: 4, duel: 4, orikLyrie: 4, nualia: 4 };
+const LEVELS = { oldlight: 2, sczarni: 2, seacaves: 4, festival: 1, aldern: 1, cathedral: 1, boar: 2, glassworks: 2, tsuto: 2, sinspawn: 3, erylium: 3, nettlewood: 3, bridge: 4, bruthazmus: 4, ripnugget: 4, duel: 4, orikLyrie: 4, nualia: 4 };
 const PLAYERS = {
   fighter: { race: 'human', flex: 'str', base: { str: 17, dex: 14, con: 14, int: 10, wis: 10, cha: 7 }, feats: ['powerAttack', 'weaponFocus', 'dodge'], kit: 1 },
   wizard: { race: 'gnome', base: { str: 8, dex: 14, con: 14, int: 17, wis: 10, cha: 10 }, feats: ['toughness'], kit: 0 },

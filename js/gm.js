@@ -1,6 +1,7 @@
 // The Game Master: frames the party's dialogue, explains skill checks and teaches
 // the Pathfinder rules as they come up in battle.
 import { SKILLS, ABIL_NAMES } from './rules.js';
+import { GM_MORE } from './dialogue_more.js';
 
 const pick = (a) => a[Math.floor(Math.random() * a.length)];
 
@@ -29,7 +30,23 @@ const CAMP_INTROS = [
   'With the watch set, quiet conversation drifts around the fire.',
 ];
 
-export const gmSettings = { mode: 'full' }; // mirrors voiceSettings.gm; set by the UI
+for (const [k, list] of Object.entries(GM_MORE.actions || {})) ACTIONS[k] = [...(ACTIONS[k] || []), ...list];
+for (const [k, list] of Object.entries(GM_MORE.heroActions || {})) HERO_ACTIONS[k] = [...(HERO_ACTIONS[k] || []), ...list];
+SCENE_INTROS.push(...(GM_MORE.sceneIntros || []));
+CAMP_INTROS.push(...(GM_MORE.campIntros || []));
+
+export const gmSettings = { mode: 'full' };
+
+const VICTORY_LINES = ['And the battle is won.', 'Silence falls over the battlefield. You are victorious.', 'The last foe falls. Well played.'];
+export const fallenLine = (name) => `${name} has fallen. The dice can be cruel.`;
+
+// Every fixed GM line (for the recorded voice pack).
+export function ALL_GM_LINES() {
+  return [
+    ...Object.values(ACTIONS).flat(), ...SCENE_INTROS, ...CAMP_INTROS, ...VICTORY_LINES,
+    ...['Brannoc', 'Tamsin', 'Quillan', 'Pip'].map(fallenLine),
+  ];
+} // mirrors voiceSettings.gm; set by the UI
 
 export function sceneIntro(camp = false) { return pick(camp ? CAMP_INTROS : SCENE_INTROS); }
 
@@ -111,11 +128,11 @@ export class GMCommentator {
         if (d.notes.some((n) => n.startsWith('power attack'))) this.tip('powerAttack');
         break;
       case 'crit': this.tip('crit'); break;
-      case 'down': if (d.t.side === 'party' && !d.t.dead) this.tip('dying'); else if (d.t.side === 'party') this.say(`${d.t.name} has fallen. The dice can be cruel.`); break;
+      case 'down': if (d.t.side === 'party' && !d.t.dead) this.tip('dying'); else if (d.t.side === 'party') this.say(fallenLine(d.t.name)); break;
       case 'defensive': if (d.u.side === 'party') this.tip('defensive'); break;
       case 'dr': this.tip('dr'); break;
       case 'end':
-        if (d.res === 'victory') this.say(pick(['And the battle is won.', 'Silence falls over the battlefield. You are victorious.', 'The last foe falls. Well played.']));
+        if (d.res === 'victory') this.say(pick(VICTORY_LINES));
         break;
       default: break;
     }
