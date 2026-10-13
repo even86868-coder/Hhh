@@ -2,22 +2,21 @@
 // Lines containing the player's own name can't be pre-recorded; the game speaks
 // those (and anything else unrecorded) with the device's built-in voices.
 import { BARKS, MONSTER_BARKS, SCENES, CAMP, fill } from '../js/dialogue.js';
-import { TIPS, ALL_GM_LINES } from '../js/gm.js';
+import { ALL_GM_LINES } from '../js/gm.js';
 import { STORY } from '../js/story.js';
-import { ENCOUNTERS } from '../js/maps.js';
-import { MONSTERS } from '../js/monsters.js';
-import { lineKey, normalizeLine, MONSTER_PACK } from '../js/voicekey.js';
+import { lineKey, normalizeLine, MONSTER_PACK, NAME_TOKEN, spokenForm, paragraphs, sentences } from '../js/voicekey.js';
 
 const COMPANION_BY_ROLE = { tank: 'Brannoc', healer: 'Tamsin', arcane: 'Quillan', skirm: 'Pip' };
 const COMPANIONS = Object.values(COMPANION_BY_ROLE);
 const PERSONALITIES = ['heroic', 'cheerful', 'grim', 'snarky'];
 const HERO_VOICES = ['hero_a', 'hero_b', 'hero_c', 'hero_d'];
-const PLAYER = '\u0000PLAYER\u0000'; // stand-in for the player's name: lines containing it are skipped
+const PLAYER = NAME_TOKEN; // stand-in for the player's name
 
 export function collectLines({ heroVoices = HERO_VOICES } = {}) {
   const out = new Map();
   const add = (voice, text, source) => {
-    if (!text || text.includes(PLAYER) || /\{\w+\}/.test(text)) return;
+    if (text && text.includes(PLAYER)) text = spokenForm(text); // record it without the name, if the name is only a form of address
+    if (!text || /\{\w+\}/.test(text)) return;
     const t = normalizeLine(text);
     const key = lineKey(voice, t);
     if (!out.has(key)) out.set(key, { key, voice, text: t, source });
@@ -50,24 +49,34 @@ export function collectLines({ heroVoices = HERO_VOICES } = {}) {
   for (const [id, lines] of Object.entries(SCENES)) roleLines(lines, `scene:${id}`);
   CAMP.forEach((c, i) => roleLines(Array.isArray(c) ? c : c.lines, `camp:${i}`));
 
-  // Game Master: stage directions, intros, rules tips, battle lines
+  // Game Master scene framing (only spoken when the GM is set to Full). Rules tips, dice rolls
+  // and battle announcements are shown on screen, not spoken, so they aren't recorded.
   for (const l of ALL_GM_LINES()) add('gm', l, 'gm');
-  for (const l of Object.values(TIPS)) add('gm', l, 'gm:tip');
-  const bosses = new Set();
-  for (const enc of Object.values(ENCOUNTERS)) for (const e of enc.enemies) if (MONSTERS[e.key]?.boss) bosses.add(e.name || MONSTERS[e.key].name);
-  for (const b of bosses) add('gm', `${b} stands before you. Roll initiative!`, 'gm:start');
-  for (let n = 1; n <= 6; n++) add('gm', `${n} foes close in. Roll initiative!`, 'gm:start');
 
-  // Story narration read by the GM: resolve role tokens for each possible party.
+  // Story narration read by the GM: resolve role tokens for each possible party. Passages that
+  // say the player's name are recorded paragraph by paragraph (and those paragraphs sentence
+  // by sentence), matching how the game looks them up.
+  const addNarration = (t, source) => {
+    if (!t.includes(PLAYER)) { add('gm', t, source); return; }
+    for (const p of paragraphs(t)) {
+      if (!p.includes(PLAYER)) add('gm', p, source);
+      else for (const s of sentences(p)) add('gm', s, source);
+    }
+  };
   for (const [id, node] of Object.entries(STORY)) {
     if (node.combat || !node.text) continue;
+    const texts = new Set();
+    const states = [{ flags: {}, party: [] }, { flags: new Proxy({}, { get: (t, k) => (/Seen|gmTips/.test(String(k)) ? [] : true) }), party: [] }];
+    if (typeof node.text === 'string') texts.add(node.text);
+    else for (const s of states) { try { texts.add(node.text(s)); } catch (e) { /* needs more state */ } }
     for (const playerRole of Object.keys(COMPANION_BY_ROLE)) {
-      const names = { ...COMPANION_BY_ROLE, [playerRole]: PLAYER, name: PLAYER, who: 'You' };
-      const states = [{ flags: {}, party: [] }, { flags: new Proxy({}, { get: (t, k) => (/Seen|gmTips/.test(String(k)) ? [] : true) }), party: [] }];
-      const texts = new Set();
-      if (typeof node.text === 'string') texts.add(node.text);
-      else for (const s of states) { try { texts.add(node.text(s)); } catch (e) { /* needs more state */ } }
-      for (const t of texts) add('gm', t.replace(/\{(\w+)\}/g, (m, k) => names[k] ?? m), `story:${id}`);
+      for (const who of ['You', ...COMPANIONS.filter((n) => n !== COMPANION_BY_ROLE[playerRole])]) {
+        const names = { ...COMPANION_BY_ROLE, [playerRole]: PLAYER, name: PLAYER, who };
+        for (const t of texts) {
+          if (who !== 'You' && !t.includes('{who}')) continue;
+          addNarration(t.replace(/\{(\w+)\}/g, (m, k) => names[k] ?? m), `story:${id}`);
+        }
+      }
     }
   }
   return [...out.values()];

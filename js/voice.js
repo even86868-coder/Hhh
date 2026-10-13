@@ -1,13 +1,13 @@
 // Character voices. Recorded clips from the voice pack (voices/) play when available;
 // everything else uses the device's built-in speech synthesis (free, offline).
-import { lineKey, packVoice, HERO_FALLBACK } from './voicekey.js';
+import { lineKey, packVoice, HERO_FALLBACK, spokenForm, paragraphs, sentences } from './voicekey.js';
 // To sound less robotic we (1) rank the installed voices and prefer the natural/neural
 // ones, (2) give each character a *different voice* instead of heavy pitch-shifting,
 // and (3) speak sentence by sentence with natural pauses.
 export const voiceSettings = {
   enabled: true,
-  narrator: false, // the Game Master reads story narration aloud
-  gm: 'full', // Game Master commentary: 'full' | 'tips' | 'off'
+  narrator: true, // the Game Master reads story narration aloud
+  gm: 'tips', // Game Master's own commentary: 'full' (adds scene framing) | 'tips' (rules only) | 'off'
   volume: 0.9,
   cast: {}, // user overrides: speaker key -> voiceURI
   recorded: true, // use the recorded voice pack when present
@@ -31,14 +31,40 @@ export async function loadVoicePack() {
 }
 if (typeof window !== 'undefined') loadVoicePack();
 
-function recordedClip(text, speaker) {
-  if (!voiceSettings.recorded || !pack.keys.size) return null;
+// The player's name (set by the UI) lets lines that address the player use a recording made without it.
+export const voiceContext = { playerName: '' };
+function clipFor(text, speaker) {
+  if (!text || !voiceSettings.recorded || !pack.keys.size) return null;
   const pv = packVoice(speaker);
   for (const v of HERO_FALLBACK[pv] || [pv]) {
     const key = lineKey(v, text);
     if (pack.keys.has(key)) return `${pack.dir}/${key}.${pack.ext}`;
   }
   return null;
+}
+function recordedClip(text, speaker) {
+  const name = voiceContext.playerName;
+  return clipFor(text, speaker) || (name && text.includes(name) ? clipFor(spokenForm(text, name), speaker) : null);
+}
+// What to play for a line: recordings where they exist, the device voice for the rest.
+// Narration falls back paragraph by paragraph, then sentence by sentence.
+function plan(text, speaker) {
+  const whole = recordedClip(text, speaker);
+  if (whole) return [{ clip: whole, text }];
+  if (speaker.kind !== 'narrator' && speaker.kind !== 'gm') return [{ text }];
+  const out = [];
+  for (const p of paragraphs(text)) {
+    const c = recordedClip(p, speaker);
+    if (c) { out.push({ clip: c, text: p }); continue; }
+    for (const s of sentences(p)) {
+      const sc = recordedClip(s, speaker);
+      const last = out[out.length - 1];
+      if (sc) out.push({ clip: sc, text: s });
+      else if (last && !last.clip) last.text += ` ${s}`;
+      else out.push({ text: s });
+    }
+  }
+  return out.some((x) => x.clip) ? out : [{ text }];
 }
 let currentAudio = null;
 function playClip(url, gen) {
@@ -191,16 +217,19 @@ export function speak(text, speaker = { kind: 'gm' }, { queue = true } = {}) {
   if (speaker.kind === 'narrator' && !voiceSettings.narrator) return Promise.resolve();
   if (!queue) stopVoices();
   if (synth && !voices.length) loadVoices();
-  const clip = recordedClip(text, speaker);
+  const parts = plan(text, speaker);
   const canSynth = !!synth && voices.length > 0;
-  if (!clip && !canSynth) return Promise.resolve(); // nothing can speak (e.g. some Linux setups)
+  if (!canSynth && !parts.some((x) => x.clip)) return Promise.resolve(); // nothing can speak (e.g. some Linux setups)
   const gen = generation;
   const prof = resolve(speaker);
   const run = async () => {
-    if (clip && (await playClip(clip, gen))) return;
-    if (!canSynth) return;
-    const voice = voiceFor(prof.key);
-    for (const c of chunks(text)) { if (gen !== generation) return; await utter(c, prof, voice, gen); }
+    for (const part of parts) {
+      if (gen !== generation) return;
+      if (part.clip && (await playClip(part.clip, gen))) continue;
+      if (!canSynth) continue;
+      const voice = voiceFor(prof.key);
+      for (const c of chunks(part.text)) { if (gen !== generation) return; await utter(c, prof, voice, gen); }
+    }
   };
   chain = chain.then(run);
   return chain;
