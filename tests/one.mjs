@@ -1,0 +1,16 @@
+import { createCharacter, createCompanion, companionRolesFor, levelUp, rest } from '../js/rules.js';
+import { Combat } from '../js/combat.js';
+import { aiTurn } from '../js/ai.js';
+import { buildEncounter } from '../js/maps.js';
+import { setRng, seeded } from '../js/dice.js';
+const [key='festival', cls='barbarian', lvl='1', seed='3'] = process.argv.slice(2);
+setRng(seeded(+seed));
+const p = createCharacter({ name: 'Hero', isPlayer: true, cls, race: 'halfOrc', flex: 'str', base: { str: 17, dex: 14, con: 14, int: 10, wis: 10, cha: 7 }, feats: ['powerAttack'], kit: 0 });
+for (let L = 2; L <= +lvl; L++) levelUp(p, {});
+rest(p);
+const pts = [p, ...companionRolesFor(cls).map((r) => createCompanion(r, +lvl))];
+const enc = buildEncounter(key, {});
+const fx = { log: (t) => console.log(t), update() {}, float() {}, async move() {}, async attack() {}, async spell() {}, async banner(t) { console.log('==', t); }, async wait() {}, async turnStart(u) { console.log(`-- ${u.name} (${u.hp}/${u.maxHp})`); } };
+const cb = new Combat({ map: enc.map, party: pts, enemies: enc.enemies, fx, controllers: { player: aiTurn, ai: aiTurn } });
+cb.inventory = { potions: 2 };
+console.log(await cb.run());
