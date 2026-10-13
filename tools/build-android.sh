@@ -15,23 +15,10 @@ cp -r voices/index.json voices/clips www/voices/
 [ -d android ] || npx cap add android
 npx cap sync android
 
-# 3. App icon: the game's icon at every launcher size.
+# 3. App icon and splash screen (the goblin on the game's background), pre-made in mobile/res.
 RES=android/app/src/main/res
 rm -rf "$RES/mipmap-anydpi-v26"
-for pair in mdpi:48 hdpi:72 xhdpi:96 xxhdpi:144 xxxhdpi:192; do
-  dir="$RES/mipmap-${pair%%:*}"; size="${pair##*:}"
-  mkdir -p "$dir"
-  for name in ic_launcher ic_launcher_round ic_launcher_foreground; do
-    convert icons/icon-512.png -filter point -resize "${size}x${size}" "$dir/$name.png"
-  done
-done
-
-# Splash screen: the icon on the game's background colour.
-for f in "$RES"/drawable*/splash.png; do
-  size=$(identify -format '%wx%h' "$f")
-  short=$(identify -format '%[fx:min(w,h)]' "$f")
-  convert -size "$size" xc:'#1a1030' \( icons/icon-512.png -filter point -resize "$((short / 2))x$((short / 2))" \) -gravity center -composite "$f"
-done
+cp -r mobile/res/. "$RES/"
 
 # 4. Version: each build gets a higher number so Android accepts it as an update.
 CODE="${BUILD_NUMBER:-1}"
