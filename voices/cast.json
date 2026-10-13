@@ -54,7 +54,7 @@
   },
   "voices": {
     "gm": {
-      "elevenlabs": "",
+      "elevenlabs": "JBFqnCBsd6RMkjVDRZzb",
       "want": {
         "gender": "male",
         "age": [
@@ -88,10 +88,11 @@
         "style": 0.25
       },
       "openai": "fable",
-      "direction": "A warm, wise fantasy storyteller and game master. Unhurried, gently dramatic, a twinkle of humor."
+      "direction": "A warm, wise fantasy storyteller and game master. Unhurried, gently dramatic, a twinkle of humor.",
+      "elevenlabsName": "George - Warm, Captivating Storyteller"
     },
     "Brannoc": {
-      "elevenlabs": "",
+      "elevenlabs": "pqHfZKP75CvOlQylNhV4",
       "want": {
         "gender": "male",
         "age": [
@@ -126,10 +127,11 @@
         "style": 0.3
       },
       "openai": "onyx",
-      "direction": "A gruff, laconic veteran soldier. Low, gravelly, few words, dry humor, protective."
+      "direction": "A gruff, laconic veteran soldier. Low, gravelly, few words, dry humor, protective.",
+      "elevenlabsName": "Bill - Wise, Mature, Balanced"
     },
     "Tamsin": {
-      "elevenlabs": "",
+      "elevenlabs": "EXAVITQu4vr4xnSDxMaL",
       "want": {
         "gender": "female",
         "age": [
@@ -161,10 +163,11 @@
         "style": 0.3
       },
       "openai": "coral",
-      "direction": "A warm, kind young priestess. Gentle but firm, scolds with affection, brave."
+      "direction": "A warm, kind young priestess. Gentle but firm, scolds with affection, brave.",
+      "elevenlabsName": "Sarah - Mature, Reassuring, Confident"
     },
     "Quillan": {
-      "elevenlabs": "",
+      "elevenlabs": "onwK4e9ZLuTAKqWW03F9",
       "want": {
         "gender": "male",
         "age": [
@@ -198,10 +201,11 @@
         "style": 0.45
       },
       "openai": "ash",
-      "direction": "An excitable, talkative elven scholar. Quick, enthusiastic, loves big words."
+      "direction": "An excitable, talkative elven scholar. Quick, enthusiastic, loves big words.",
+      "elevenlabsName": "Daniel - Steady Broadcaster"
     },
     "Pip": {
-      "elevenlabs": "",
+      "elevenlabs": "TX3LPaxmHKxFdv7VOQHJ",
       "want": {
         "gender": "male",
         "age": [
@@ -234,10 +238,11 @@
         "style": 0.55
       },
       "openai": "nova",
-      "direction": "A cheeky, playful halfling thief. Bright, quick, mischievous, always joking."
+      "direction": "A cheeky, playful halfling thief. Bright, quick, mischievous, always joking.",
+      "elevenlabsName": "Liam - Energetic, Social Media Creator"
     },
     "hero_a": {
-      "elevenlabs": "",
+      "elevenlabs": "iP95p4xoKVk53GoZ742B",
       "want": {
         "gender": "male",
         "age": [
@@ -264,10 +269,11 @@
         "style": 0.35
       },
       "openai": "verse",
-      "direction": "A brave adventurer with a deep, steady voice."
+      "direction": "A brave adventurer with a deep, steady voice.",
+      "elevenlabsName": "Chris - Charming, Down-to-Earth"
     },
     "hero_b": {
-      "elevenlabs": "",
+      "elevenlabs": "cgSgspJ2msm6clMCkdW9",
       "want": {
         "gender": "female",
         "age": [
@@ -295,10 +301,11 @@
         "style": 0.35
       },
       "openai": "shimmer",
-      "direction": "A brave adventurer with a warm, confident voice."
+      "direction": "A brave adventurer with a warm, confident voice.",
+      "elevenlabsName": "Jessica - Playful, Bright, Warm"
     },
     "hero_c": {
-      "elevenlabs": "",
+      "elevenlabs": "pFZP5JQG7iQjIQuC4Bku",
       "want": {
         "gender": "female",
         "age": [
@@ -323,10 +330,11 @@
         "style": 0.4
       },
       "openai": "sage",
-      "direction": "A brave adventurer with a bright, lively voice."
+      "direction": "A brave adventurer with a bright, lively voice.",
+      "elevenlabsName": "Lily - Velvety Actress"
     },
     "hero_d": {
-      "elevenlabs": "",
+      "elevenlabs": "IKne3meq5aSn9XLyUdCD",
       "want": {
         "gender": "male",
         "age": [
@@ -350,10 +358,11 @@
         "style": 0.4
       },
       "openai": "ballad",
-      "direction": "A brave young adventurer with a high, eager voice."
+      "direction": "A brave young adventurer with a high, eager voice.",
+      "elevenlabsName": "Charlie - Deep, Confident, Energetic"
     },
     "goblin": {
-      "elevenlabs": "",
+      "elevenlabs": "bIHbv24MWmeRgasZH58o",
       "want": {
         "gender": "any",
         "age": [
@@ -388,10 +397,11 @@
         "style": 0.8
       },
       "openai": "echo",
-      "direction": "A silly, screechy, gleefully menacing little goblin. Fast, high, cackling, sing-song."
+      "direction": "A silly, screechy, gleefully menacing little goblin. Fast, high, cackling, sing-song.",
+      "elevenlabsName": "Will - Relaxed Optimist"
     },
     "ripnugget": {
-      "elevenlabs": "",
+      "elevenlabs": "CwhRBWXzGAHq8TQ4Fs17",
       "want": {
         "gender": "male",
         "age": [
@@ -420,10 +430,11 @@
         "style": 0.75
       },
       "openai": "echo",
-      "direction": "A pompous goblin chieftain, shrill and boastful, shouting."
+      "direction": "A pompous goblin chieftain, shrill and boastful, shouting.",
+      "elevenlabsName": "Roger - Laid-Back, Casual, Resonant"
     },
     "erylium": {
-      "elevenlabs": "",
+      "elevenlabs": "FGY2WhTYpPnrIDTdsKH5",
       "want": {
         "gender": "female",
         "age": [
@@ -453,10 +464,11 @@
         "style": 0.8
       },
       "openai": "ballad",
-      "direction": "A tiny, giggling, wicked imp demon. Hissing, high, gleeful."
+      "direction": "A tiny, giggling, wicked imp demon. Hissing, high, gleeful.",
+      "elevenlabsName": "Laura - Enthusiast, Quirky Attitude"
     },
     "beast": {
-      "elevenlabs": "",
+      "elevenlabs": "KTAbPR4QFlhaTpde6md8",
       "want": {
         "gender": "male",
         "age": [
@@ -488,10 +500,11 @@
         "style": 0.7
       },
       "openai": "onyx",
-      "direction": "A snarling monster. Growl and hiss the words."
+      "direction": "A snarling monster. Growl and hiss the words.",
+      "elevenlabsName": "Bloodgrin VF - Villain"
     },
     "tsuto": {
-      "elevenlabs": "",
+      "elevenlabs": "cjVigY5qzO86Huf0OWal",
       "want": {
         "gender": "male",
         "age": [
@@ -516,10 +529,11 @@
         "style": 0.5
       },
       "openai": "ash",
-      "direction": "A bitter, arrogant young man. Cold, sneering, wounded pride."
+      "direction": "A bitter, arrogant young man. Cold, sneering, wounded pride.",
+      "elevenlabsName": "Eric - Smooth, Trustworthy"
     },
     "bruthazmus": {
-      "elevenlabs": "",
+      "elevenlabs": "KTAbPR4QFlhaTpde6md8",
       "want": {
         "gender": "male",
         "age": [
@@ -545,10 +559,11 @@
         "style": 0.6
       },
       "openai": "onyx",
-      "direction": "A hulking, mocking bugbear hunter. Deep, slow, menacing laughter."
+      "direction": "A hulking, mocking bugbear hunter. Deep, slow, menacing laughter.",
+      "elevenlabsName": "Bloodgrin VF - Villain"
     },
     "orik": {
-      "elevenlabs": "",
+      "elevenlabs": "nPczCjzI2devNBz1zQrb",
       "want": {
         "gender": "male",
         "age": [
@@ -572,10 +587,11 @@
         "style": 0.2
       },
       "openai": "verse",
-      "direction": "A calm professional mercenary. Matter-of-fact, unbothered."
+      "direction": "A calm professional mercenary. Matter-of-fact, unbothered.",
+      "elevenlabsName": "Brian - Deep, Resonant and Comforting"
     },
     "lyrie": {
-      "elevenlabs": "",
+      "elevenlabs": "Xb7hH8MSUJpSbSDYk0k2",
       "want": {
         "gender": "female",
         "age": [
@@ -601,10 +617,11 @@
         "style": 0.4
       },
       "openai": "shimmer",
-      "direction": "An impatient, condescending scholar-wizard. Clipped and irritated."
+      "direction": "An impatient, condescending scholar-wizard. Clipped and irritated.",
+      "elevenlabsName": "Alice - Clear, Engaging Educator"
     },
     "nualia": {
-      "elevenlabs": "",
+      "elevenlabs": "XrExE9yKIg1WjnnlVkGX",
       "want": {
         "gender": "female",
         "age": [
@@ -631,10 +648,11 @@
         "style": 0.65
       },
       "openai": "sage",
-      "direction": "A tragic, furious fallen priestess. Intense, haunted, venomous."
+      "direction": "A tragic, furious fallen priestess. Intense, haunted, venomous.",
+      "elevenlabsName": "Matilda - Knowledgable, Professional"
     },
     "thug": {
-      "elevenlabs": "",
+      "elevenlabs": "CwhRBWXzGAHq8TQ4Fs17",
       "want": {
         "gender": "male",
         "age": [
@@ -659,7 +677,8 @@
         "style": 0.5
       },
       "openai": "verse",
-      "direction": "A rough street thug. Threatening, swaggering."
+      "direction": "A rough street thug. Threatening, swaggering.",
+      "elevenlabsName": "Roger - Laid-Back, Casual, Resonant"
     }
   }
 }
