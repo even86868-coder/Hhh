@@ -13,6 +13,7 @@ import { SPELLS } from './spells.js';
 import { sfx, playMusic, stopMusic, settings as audioSettings, unlockAudio } from './audio.js';
 import { PERSONALITIES, DEFAULT_PERSONALITY } from './dialogue.js';
 import { defaultSpeaker } from './speakers.js';
+import { artSettings, artUrl, characterArtKey, npcArtKey, unitArtKey, sceneArtKey, artCount } from './art.js';
 import { speak, stopVoices, voiceSettings, voiceContext, VOICE_PRESETS, voiceAvailable, castList, setCast, listVoices, voicePackSize } from './voice.js';
 import { gmSettings, sceneIntro, stageDirection, explainCheck, explainResult, GMCommentator } from './gm.js';
 import { aiSettings, AI_MODELS, getApiKey, setApiKey, testConnection, aiReady } from './aibanter.js';
@@ -45,12 +46,13 @@ try {
   Object.assign(voiceSettings, prefs.voice || {});
   Object.assign(talkSettings, prefs.talk || {});
   Object.assign(aiSettings, prefs.ai || {});
+  if (prefs.art) artSettings.style = prefs.art;
   // v2: the narrator reads the story by default and the GM no longer adds his own scene framing.
   if ((prefs.v || 1) < 2 && prefs.voice) { voiceSettings.narrator = true; voiceSettings.gm = 'tips'; }
 } catch (e) { /* ignore */ }
 prefs.v = 2;
 function savePrefs() {
-  try { localStorage.setItem('runelords.prefs', JSON.stringify({ ...prefs, audio: audioSettings, voice: voiceSettings, talk: talkSettings, ai: { enabled: aiSettings.enabled, model: aiSettings.model } })); } catch (e) { /* ignore */ }
+  try { localStorage.setItem('runelords.prefs', JSON.stringify({ ...prefs, art: artSettings.style, audio: audioSettings, voice: voiceSettings, talk: talkSettings, ai: { enabled: aiSettings.enabled, model: aiSettings.model } })); } catch (e) { /* ignore */ }
 }
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 gmSettings.mode = voiceSettings.gm || 'tips';
@@ -64,11 +66,20 @@ function spriteCanvas(src, scale = 4, cls = 'sprite') {
   ctx.drawImage(src, 0, 0, 18 * scale, 18 * scale);
   return c;
 }
-const portraitOf = (c, scale = 3) => spriteCanvas(characterSprite(c), scale, 'portrait');
-const unitPortrait = (u, scale = 2) => spriteCanvas(u.c ? characterSprite(u.c) : monsterSprite(u.def.sprite), scale, 'portrait');
+// A painted image when there is one, else the pixel sprite.
+function artOr(key, pixelSrc, scale, cls) {
+  const url = artUrl(key);
+  if (!url) return spriteCanvas(pixelSrc, scale, cls);
+  return h('img', { class: `${cls} art`, src: url, width: 18 * scale, height: 18 * scale, alt: '', draggable: 'false' });
+}
+const portraitOf = (c, scale = 3) => artOr(characterArtKey(c), characterSprite(c), scale, 'portrait');
+const unitPortrait = (u, scale = 2) => artOr(unitArtKey(u), u.c ? characterSprite(u.c) : monsterSprite(u.def.sprite), scale, 'portrait');
+const npcPortrait = (name, scale, cls) => artOr(npcArtKey(name), npcSprite(name), scale, cls);
 
 let sceneRAF = null;
 function sceneCanvas(key) {
+  const url = artUrl(sceneArtKey(key));
+  if (url) { cancelAnimationFrame(sceneRAF); return h('img', { class: 'scene art', src: url, alt: '', draggable: 'false' }); }
   const c = h('canvas', { class: 'scene', width: 160, height: 90 });
   const ctx = c.getContext('2d');
   cancelAnimationFrame(sceneRAF);
@@ -190,6 +201,7 @@ function showSettings() {
       h('label', { class: 'row' }, 'Sound effects', btn(audioSettings.sfx ? 'On' : 'Off', () => { audioSettings.sfx = !audioSettings.sfx; savePrefs(); render(); })),
       h('label', { class: 'row' }, 'Battle speed', btn(`${prefs.speed}x`, () => { prefs.speed = prefs.speed >= 3 ? 1 : prefs.speed + 1; savePrefs(); render(); })),
       h('label', { class: 'row' }, 'Typewriter text', btn(prefs.typewriter ? 'On' : 'Off', () => { prefs.typewriter = !prefs.typewriter; savePrefs(); render(); })),
+      artCount() ? h('label', { class: 'row' }, 'Art style', btn(artSettings.style === 'painted' ? 'Painted' : 'Pixel', () => { artSettings.style = artSettings.style === 'painted' ? 'pixel' : 'painted'; savePrefs(); render(); })) : null,
       h('h3', {}, 'Voices & dialogue'),
       h('label', { class: 'row' }, 'Character banter', btn(talkSettings.banter ? 'On' : 'Off', () => { talkSettings.banter = !talkSettings.banter; savePrefs(); render(); })),
       h('label', { class: 'row' }, 'Speech bubbles in battle', btn(talkSettings.bubbles ? 'On' : 'Off', () => { talkSettings.bubbles = !talkSettings.bubbles; savePrefs(); render(); })),
@@ -274,7 +286,7 @@ function startWatchMode() {
   draft = freshDraft();
   Object.assign(draft, { race, cls, name: randomName(), personality: DEFAULT_PERSONALITY[cls] });
   applyClassDefaults();
-  draft.appearance = { skin: Math.floor(Math.random() * SKIN.length), hair: Math.floor(Math.random() * HAIR.length), hairStyle: Math.floor(Math.random() * HAIR_STYLES.length), outfit: Math.floor(Math.random() * OUTFIT.length), beard: race === 'dwarf' || Math.random() < 0.2, voice: pickOf(Object.keys(VOICE_PRESETS)) };
+  draft.appearance = { body: pickOf(['m', 'f']), skin: Math.floor(Math.random() * SKIN.length), hair: Math.floor(Math.random() * HAIR.length), hairStyle: Math.floor(Math.random() * HAIR_STYLES.length), outfit: Math.floor(Math.random() * OUTFIT.length), beard: race === 'dwarf' || Math.random() < 0.2, voice: pickOf(Object.keys(VOICE_PRESETS)) };
   const base = draftChar();
   draft.feats = autoFeats({ ...base, feats: [] }, 1, featsGainedAt(base, 1));
   if (cls === 'fighter' && !draft.feats.some((f) => FEATS[f].combat)) draft.feats[0] = 'powerAttack';
@@ -342,7 +354,7 @@ const SKILL_PICKS = {
 
 let draft = null;
 function freshDraft() {
-  return { name: '', race: 'human', cls: 'fighter', base: { ...ARRAYS.fighter }, flex: 'str', feats: [], skills: [], kit: 0, favoredEnemy: 'goblinoid', personality: 'heroic', appearance: { skin: 1, hair: 1, hairStyle: 0, outfit: 0, beard: false, voice: 'warm' }, step: 0 };
+  return { name: '', race: 'human', cls: 'fighter', base: { ...ARRAYS.fighter }, flex: 'str', feats: [], skills: [], kit: 0, favoredEnemy: 'goblinoid', personality: 'heroic', appearance: { body: 'm', skin: 1, hair: 1, hairStyle: 0, outfit: 0, beard: false, voice: 'warm' }, step: 0 };
 }
 const draftChar = () => createCharacter({ ...draft, isPlayer: true, name: draft.name || 'Hero' });
 const pointsSpent = () => ABILS.reduce((s, k) => s + POINT_COST[draft.base[k]], 0);
@@ -370,7 +382,7 @@ function autoSkills() {
 function renderCreator() {
   const c = draftChar();
   const preview = h('div', { class: 'creator-preview' },
-    spriteCanvas(characterSprite(c), 6, 'sprite big bob'),
+    artOr(characterArtKey(c), characterSprite(c), 6, 'sprite big bob'),
     h('div', { class: 'preview-info' },
       h('div', { class: 'pname' }, draft.name || 'Your Hero'),
       h('div', { class: 'psub' }, `${RACES[draft.race].name} ${CLASSES[draft.cls].name}`),
@@ -499,6 +511,7 @@ function creatorLooks() {
   const ap = draft.appearance;
   const swatches = (list, key) => h('div', { class: 'swatches' }, list.map((col, i) => h('button', { class: `swatch ${ap[key] === i ? 'on' : ''}`, style: { background: col }, onclick: () => { ap[key] = i; renderCreator(); }, 'aria-label': `${key} ${i}` })));
   return h('div', {},
+    h('h3', {}, 'Build'), h('div', { class: 'row-btns' }, [['m', 'Masculine'], ['f', 'Feminine']].map(([k, n]) => btn(n, () => { ap.body = k; renderCreator(); }, (ap.body || 'm') === k ? 'on small' : 'small'))),
     h('h3', {}, 'Skin'), swatches(SKIN, 'skin'),
     h('h3', {}, 'Hair color'), swatches(HAIR, 'hair'),
     h('h3', {}, 'Hair style'), h('div', { class: 'row-btns wrap' }, HAIR_STYLES.map((n, i) => btn(n, () => { ap.hairStyle = i; renderCreator(); }, ap.hairStyle === i ? 'on small' : 'small'))),
@@ -630,7 +643,7 @@ function renderStory(node, notes = []) {
   const textEl = h('div', { class: 'story-text' });
   const choicesEl = h('div', { class: 'choices' });
   const banterEl = h('div', { class: 'banter' });
-  const npc = node.npc ? spriteCanvas(npcSprite(node.npc), 4, 'npc-portrait bob') : null;
+  const npc = node.npc ? npcPortrait(node.npc, 4, 'npc-portrait bob') : null;
   const screen = h('div', { class: 'screen story' },
     partyBar(),
     node.chapter ? h('div', { class: 'chapter' }, node.chapter) : null,
@@ -720,7 +733,7 @@ async function playBanter(node, nodeId, el, aiLinesPromise) {
   for (const l of script) {
     if (!el.isConnected) return;
     const row = l.gm
-      ? h('div', { class: 'say gm' }, spriteCanvas(npcSprite('gm'), 2, 'portrait'), h('div', { class: 'say-body' }, h('span', {}, l.text)))
+      ? h('div', { class: 'say gm' }, npcPortrait('gm', 2, 'portrait'), h('div', { class: 'say-body' }, h('span', {}, l.text)))
       : h('div', { class: `say ${l.c.isPlayer ? 'hero' : ''}` }, portraitOf(l.c, 2), h('div', { class: 'say-body' }, h('b', {}, l.c.name), h('span', {}, l.text)));
     el.insertBefore(row, skipBtn);
     if (skip) continue;
@@ -760,7 +773,7 @@ function choose(node, ch, choicesEl) {
   const result = h('div', { class: 'check-result' }, die, h('div', { class: 'check-text' }, `${r.who.isPlayer ? 'You' : r.who.name} roll${r.who.isPlayer ? '' : 's'} ${checkLabel(ch.check)}...`));
   const gmOn = gmSettings.mode !== 'off';
   const gmLine = gmOn ? explainCheck(ch.check, r.who.isPlayer ? 'You' : r.who.name, r.untrained ? null : r.mod, r.bonus) : null;
-  if (gmLine) choicesEl.append(h('div', { class: 'say gm' }, spriteCanvas(npcSprite('gm'), 2, 'portrait'), h('div', { class: 'say-body' }, h('span', {}, gmLine))));
+  if (gmLine) choicesEl.append(h('div', { class: 'say gm' }, npcPortrait('gm', 2, 'portrait'), h('div', { class: 'say-body' }, h('span', {}, gmLine))));
   choicesEl.append(result);
   stopVoices(); // dice rolls are explained on screen only
   sfx('dice');
@@ -898,7 +911,7 @@ class CombatUI {
     if (typeof ResizeObserver !== 'undefined') new ResizeObserver(fit).observe(wrap);
     fit();
     this.view.speed = prefs.speed;
-    this.gmBox = h('div', { class: 'gm-box', hidden: true }, spriteCanvas(npcSprite('gm'), 2, 'portrait'), h('span', {}));
+    this.gmBox = h('div', { class: 'gm-box', hidden: true }, npcPortrait('gm', 2, 'portrait'), h('span', {}));
     this.canvas.parentElement.append(this.gmBox);
     this.gm = new GMCommentator({ state: G.state, show: (text) => this.gmSay(text) });
     this.barker = new Barker({ view: this.view, speed: prefs.speed, state: G.state, onLine: (name, text) => this.addLog(`${name}: "${text}"`, 'say') });

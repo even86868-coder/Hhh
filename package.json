@@ -16,7 +16,9 @@
     "dist:mac": "electron-builder --mac",
     "dist:linux": "electron-builder --linux",
     "voices": "node tools/generate-voices.mjs",
-    "voices:dry": "node tools/generate-voices.mjs --dry-run"
+    "voices:dry": "node tools/generate-voices.mjs --dry-run",
+    "art": "node tools/generate-art.mjs",
+    "art:dry": "node tools/generate-art.mjs --dry-run"
   },
   "devDependencies": {
     "@anthropic-ai/sdk": "^0.128.0",
@@ -41,7 +43,8 @@
       "js/**",
       "icons/**",
       "desktop/**",
-      "voices/**"
+      "voices/**",
+      "art/**"
     ],
     "icon": "icons/icon-512.png",
     "win": {

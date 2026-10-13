@@ -1,6 +1,8 @@
 import { showTitle } from './ui.js';
+import { loadArt } from './art.js';
 
-showTitle();
+// Find out which painted images exist before the first screen (pixel art if this is slow or fails).
+Promise.race([loadArt(), new Promise((r) => setTimeout(r, 1500))]).finally(showTitle);
 
 // Offline cache for the web/phone version only (not needed in the desktop/Android apps or the single-file build).
 const isApp = navigator.userAgent.includes('Electron') || !!window.Capacitor?.isNativePlatform?.();
