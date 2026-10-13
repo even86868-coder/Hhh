@@ -766,9 +766,9 @@ function choose(node, ch, choicesEl) {
       result.querySelector('.check-text').append(h('b', { class: r.success ? 'good' : 'bad' }, r.success ? (r.roll === 20 ? 'Natural 20! Success!' : 'Success!') : 'Failure.'), h('div', { class: 'small' }, detail));
       const cont = h('button', { class: 'choice primary', onclick: () => { sfx('click'); enterNode(r.success ? ch.pass : ch.fail); } }, 'Continue');
       choicesEl.append(cont);
-      const verdict = gmOn ? explainResult(r) : null;
-      if (verdict) result.querySelector('.check-text').append(h('div', { class: 'small gm-verdict' }, verdict));
-      const said = explained.then(() => (verdict ? speak(verdict, GM_SPEAKER) : null));
+      const gmOutcome = gmOn ? explainResult(r) : null;
+      if (gmOutcome) result.querySelector('.check-text').append(h('div', { class: 'small gm-outcome' }, gmOutcome));
+      const said = explained.then(() => (gmOutcome ? speak(gmOutcome, GM_SPEAKER) : null));
       if (autoplay()) Promise.all([said, sleep(1600 / prefs.speed)]).then(() => { if (cont.isConnected && autoplay()) cont.click(); });
     }
   }, 60);

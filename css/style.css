@@ -283,7 +283,7 @@ kbd { display: none; }
 /* ---------- Game Master ---------- */
 .say.gm .say-body { background: transparent; color: var(--gold); border: 2px dashed var(--line-dim); box-shadow: none; font-style: italic; }
 .say.gm .portrait { background: #3a2860; }
-.gm-verdict { color: var(--gold); margin-top: 4px; font-style: italic; }
+.gm-outcome { color: var(--gold); margin-top: 4px; font-style: italic; }
 .field-wrap { position: relative; }
 .gm-box { position: absolute; top: 6px; left: 6px; right: 6px; z-index: 3; display: flex; gap: 8px; align-items: center; background: rgba(27, 20, 36, 0.92); border: 2px solid var(--gold); border-radius: 6px; padding: 6px 10px 6px 4px; color: #ffeec0; font-size: 14px; line-height: 1.35; animation: fadein 0.25s ease; }
 .gm-box .portrait { width: 36px; height: 36px; flex-shrink: 0; }
