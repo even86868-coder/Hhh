@@ -597,12 +597,14 @@ let storyAutoHook = null;
 
 export function enterNode(id, { resume = false } = {}) {
   if (id === '__title') { save(); showTitle(); return; }
-  if (id === '__return') { id = G.state.returnTo || 'day2'; G.state.returnTo = null; }
+  let returning = false;
+  if (id === '__return') { id = G.state.returnTo || 'day2'; G.state.returnTo = null; returning = true; }
   const node = STORY[id];
   if (!node) { console.error('Missing node', id); return; }
   G.state.node = id;
   if (node.combat) { startCombat(id); return; }
   let notes = [];
+  if (returning) { resume = true; G.state.nodeApplied = true; } // coming back to a hub: don't re-award its effects
   if (!resume || !G.state.nodeApplied) {
     G.state.nodeApplied = false;
     notes = applyEffects(node.on);
