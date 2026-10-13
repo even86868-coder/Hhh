@@ -41,12 +41,15 @@ async function elVoiceId(slot, voiceKey) {
   if (!v) throw Object.assign(new Error(`ElevenLabs voice "${slot.elevenlabs}" (for ${voiceKey}) not found in your account`), { status: 400, fatal: true });
   return v.voice_id;
 }
+const isNarration = (line) => line.source.startsWith('story:');
+const elModel = (line) => (isNarration(line) && cast.elevenlabs.narrationModel) || cast.elevenlabs.model;
+const credits = (lines) => Math.round(lines.reduce((sum, l) => sum + l.text.length * ((cast.elevenlabs.creditsPerChar || {})[elModel(l)] ?? 1), 0));
 async function ttsElevenLabs(line, v) {
   const id = await elVoiceId(v, line.voice);
   const res = await fetch(`${EL_BASE}/v1/text-to-speech/${id}?output_format=${cast.elevenlabs.format}`, {
     method: 'POST',
     headers: { 'xi-api-key': process.env.ELEVENLABS_API_KEY, 'Content-Type': 'application/json', Accept: 'audio/mpeg' },
-    body: JSON.stringify({ text: line.text, model_id: cast.elevenlabs.model, voice_settings: { stability: 0.5, similarity_boost: 0.8, style: 0.3, use_speaker_boost: true, ...(v.settings || {}) } }),
+    body: JSON.stringify({ text: line.text, model_id: elModel(line), voice_settings: { stability: 0.5, similarity_boost: 0.8, style: 0.3, use_speaker_boost: true, ...(v.settings || {}) } }),
   });
   if (!res.ok) throw Object.assign(new Error(`ElevenLabs ${res.status}: ${(await res.text()).slice(0, 200)}`), { status: res.status });
   return Buffer.from(await res.arrayBuffer());
@@ -64,6 +67,13 @@ const missing = all.filter((l) => !existsSync(fileFor(l.key)));
 const todo = missing.slice(0, limit);
 const chars = todo.reduce((s, l) => s + l.text.length, 0);
 console.log(`${all.length} lines in the game, ${all.length - missing.length} already recorded, ${todo.length} to record now (${chars.toLocaleString()} characters) with ${provider}.`);
+if (provider === 'elevenlabs') {
+  const narr = todo.filter(isNarration);
+  const rest = todo.filter((l) => !isNarration(l));
+  console.log(`  Story narration: ${narr.length} lines on ${cast.elevenlabs.narrationModel || cast.elevenlabs.model} = about ${credits(narr).toLocaleString()} credits`);
+  console.log(`  Everything else: ${rest.length} lines on ${cast.elevenlabs.model} = about ${credits(rest).toLocaleString()} credits`);
+  console.log(`  Total: about ${credits(todo).toLocaleString()} ElevenLabs credits`);
+}
 for (const l of todo) if (!cast.voices[l.voice]) { console.error(`No casting for voice "${l.voice}" in voices/cast.json`); process.exit(1); }
 const keyVar = provider === 'elevenlabs' ? 'ELEVENLABS_API_KEY' : 'OPENAI_API_KEY';
 // ElevenLabs: compare the job with the credits left on the account.
@@ -73,8 +83,8 @@ if (provider === 'elevenlabs' && process.env.ELEVENLABS_API_KEY) {
     if (r.ok) {
       const sub = await r.json();
       const left = (sub.character_limit ?? 0) - (sub.character_count ?? 0);
-      console.log(`ElevenLabs plan "${sub.tier || '?'}": ${left.toLocaleString()} characters left this period; this run needs about ${chars.toLocaleString()}.`);
-      if (left < chars && !dry) console.log('Not enough credits for everything: it will record until the credits run out, then stop. Re-run later to continue where it left off.');
+      console.log(`ElevenLabs plan "${sub.tier || '?'}": ${left.toLocaleString()} credits left this period; this run needs about ${credits(todo).toLocaleString()}.`);
+      if (left < credits(todo) && !dry) console.log('Not enough credits for everything: it will record until the credits run out, then stop. Re-run later to continue where it left off.');
     }
   } catch (e) { /* informational only */ }
 }
