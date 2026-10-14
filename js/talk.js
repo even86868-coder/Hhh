@@ -1,6 +1,6 @@
 // Glue between dialogue data, voices, AI banter and the game.
-import { SCENES, CAMP, barkFor, monsterBark, fill } from './dialogue.js';
-import { speak } from './voice.js';
+import { SCENES, CAMP, barkOptions, monsterBark, fill } from './dialogue.js';
+import { speak, hasRecording, voicePackReady } from './voice.js';
 import { aiReady, generateBanter } from './aibanter.js';
 import { RACES, CLASSES } from './rules.js';
 
@@ -86,11 +86,14 @@ export class Barker {
   pc(unit, event, vars, opts) {
     if (!unit?.c) return false;
     const party = this.state.party;
-    for (let i = 0; i < 6; i++) {
-      const line = barkFor(event, barkKey(unit.c), vars);
-      if (line && !mentionsAbsent(line.replace(vars?.t || '\u0000', '').replace(vars?.src || '\u0000', '').replace(vars?.a || '\u0000', ''), party)) return this.say(unit, line, opts);
-    }
-    return false;
+    const named = (line) => line.replace(vars?.t || '\u0000', '').replace(vars?.src || '\u0000', '').replace(vars?.a || '\u0000', '');
+    const ok = barkOptions(event, barkKey(unit.c), vars).filter((l) => !mentionsAbsent(named(l), party));
+    if (!ok.length) return false;
+    // Prefer lines with a recording: lines that say the hero's or an enemy's name can't be pre-recorded.
+    const sp = speakerOf(unit.c);
+    const recorded = voicePackReady() ? ok.filter((l) => hasRecording(l, sp)) : [];
+    const pool = recorded.length ? recorded : ok;
+    return this.say(unit, pool[Math.floor(Math.random() * pool.length)], opts);
   }
   monster(unit, opts) { return unit && !unit.c ? this.say(unit, monsterBark(unit.key), opts) : false; }
 

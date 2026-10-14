@@ -47,6 +47,10 @@ function recordedClip(text, speaker) {
   const name = voiceContext.playerName;
   return clipFor(text, speaker) || (name && text.includes(name) ? clipFor(spokenForm(text, name), speaker) : null);
 }
+// True if this exact line has a recording for this speaker (so it won't fall back to the device voice).
+export function hasRecording(text, speaker) { return !!recordedClip(text, speaker); }
+export const voicePackReady = () => voiceSettings.enabled && voiceSettings.recorded && pack.keys.size > 0;
+
 // The speaker for a character named in the story text.
 export function storySpeaker(who) {
   if (who === 'hero') return { kind: 'hero', preset: voiceContext.heroPreset };

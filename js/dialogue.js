@@ -332,6 +332,10 @@ export function barkFor(event, speakerKey, vars = {}) {
   if (!pool || !pool.length) return null;
   return fill(pick(pool), vars);
 }
+// Every line a speaker could say for an event, with names filled in.
+export function barkOptions(event, speakerKey, vars = {}) {
+  return (BARKS[event]?.[speakerKey] || []).map((l) => fill(l, vars));
+}
 export function monsterBark(key) {
   const pool = MONSTER_BARKS[key];
   return pool ? pick(pool) : null;
