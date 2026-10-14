@@ -6,8 +6,9 @@ const { pathToFileURL } = require('url');
 const ROOT = path.join(__dirname, '..');
 
 // Serve the game from app://runelords/ so ES modules and localStorage behave like a website.
+// 'stream' lets <audio> play the recorded voice clips from this scheme reliably.
 protocol.registerSchemesAsPrivileged([
-  { scheme: 'app', privileges: { standard: true, secure: true, supportFetchAPI: true, corsEnabled: true } },
+  { scheme: 'app', privileges: { standard: true, secure: true, supportFetchAPI: true, corsEnabled: true, stream: true } },
 ]);
 
 function createWindow() {
@@ -20,7 +21,7 @@ function createWindow() {
     backgroundColor: '#1a1030',
     icon: path.join(ROOT, 'icons', 'icon-512.png'),
     autoHideMenuBar: true,
-    webPreferences: { contextIsolation: true, sandbox: true },
+    webPreferences: { contextIsolation: true, sandbox: true, autoplayPolicy: 'no-user-gesture-required' },
   });
   win.loadURL('app://runelords/index.html');
   // Links (e.g. paizo.com in About) open in the normal browser.
