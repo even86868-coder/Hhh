@@ -14,7 +14,7 @@ const RACE_LOOK = {
   human: 'human',
   elf: 'elf with long pointed ears and fine, ageless features',
   dwarf: 'stout dwarf with a broad face',
-  halfling: 'halfling, small and nimble with a youthful round face and curly hair',
+  halfling: 'halfling, small and nimble with a youthful round face, curly hair and ordinary rounded ears (not pointed)',
   gnome: 'gnome with a small wiry frame, big expressive eyes and vividly colored hair',
   halfOrc: 'half-orc with grey-green skin, a strong jaw and small tusks',
   halfElf: 'half-elf with softly pointed ears',
@@ -34,7 +34,7 @@ export const COMPANION_LOOK = {
   Brannoc: 'Brannoc, a gruff, broad-shouldered human fighter in his forties, short brown hair, thick beard, scarred, dented steel breastplate and a heavy shield, weary but loyal eyes',
   Tamsin: 'Tamsin, a warm, determined young half-elf woman, cleric of the sun goddess, golden-blonde hair in a braid, chainmail under a white-and-gold tabard, a sun-shaped amulet',
   Quillan: 'Quillan, an excitable young elf man, wizard and scholar, silver-white hair, round spectacles, deep purple robes covered in rune embroidery, ink-stained fingers holding a notebook',
-  Pip: 'Pip, a cheerful halfling rogue, messy red curly hair, freckles, a mischievous grin, patched dark leather jacket with many pockets, a dagger twirling in his fingers',
+  Pip: 'Pip, a cheerful halfling rogue (small and human-like, with ordinary rounded ears, not pointed elf ears), messy red curly hair, freckles, a mischievous grin, patched dark leather jacket with many pockets, a dagger twirling in his fingers',
 };
 export const NPC_LOOK = {
   gm: 'a wise old storyteller wizard with a long white beard and kind, twinkling eyes, deep blue hooded robe, holding a candle over an open book, the game master of the tale',
